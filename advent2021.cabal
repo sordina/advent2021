@@ -13,6 +13,7 @@ executable advent2021
   other-modules:
     Advent01
     Advent01b
+    Advent02
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -22,6 +23,7 @@ executable advent2021
     ApplicativeDo
     BlockArguments
     ViewPatterns
+    QuasiQuotes
 
   build-depends:
     base >=4.14 && <4.15,
@@ -36,4 +38,5 @@ executable advent2021
     parsec,
     vector,
     parser-combinators,
-    template-haskell
+    template-haskell,
+    raw-strings-qq
