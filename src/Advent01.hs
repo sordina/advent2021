@@ -49,7 +49,16 @@ How many measurements are larger than the previous measurement?
 
 -}
 
-import Data.List
+day1 :: String -> Int
+day1 = solution . map (read @Integer) . words
 
-day1 :: String -> Integer
-day1 = error "fixme"
+test_input :: [Int]
+test_input = [199, 200, 208, 210, 200, 207, 240, 269, 260, 263]
+
+test_solution :: Int
+test_solution = solution test_input
+
+-- >>> test_solution
+
+solution :: Ord a => [a] -> Int
+solution ds = length $ filter id $ zipWith (<) ds (tail ds)
