@@ -1,4 +1,0 @@
-#!/bin/sh
-
-hoe2 'sum.map(\x->(length.filter(length x==).map length.group.sort.concat) x).splitOn[""]'
-

@@ -1,6 +1,0 @@
-#!/bin/sh
-
-
-hoe 'length . filter (flip all (words "byr iyr eyr hgt hcl ecl pid") . flip elem) . map (map (fst.splitAt 3) . words) . splitOn "\n\n"'
-
-
