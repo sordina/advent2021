@@ -1,7 +1,7 @@
 
 module Advent01 where
 
-{- ^
+{-
 
 --- Day 1: Sonar Sweep ---
 
@@ -59,6 +59,7 @@ test_solution :: Int
 test_solution = solution test_input
 
 -- >>> test_solution
+-- 7
 
 solution :: Ord a => [a] -> Int
 solution ds = length $ filter id $ zipWith (<) ds (tail ds)
