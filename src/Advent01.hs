@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 
 module Advent01 where
 

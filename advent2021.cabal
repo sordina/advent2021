@@ -6,7 +6,7 @@ license-file:        LICENSE
 author:              Lyndon Maydwell
 maintainer:          lyndon@sordina.net
 build-type:          Simple
-extra-source-files:  CHANGELOG.md, README.md
+extra-source-files:  README.md
 
 executable advent2021
   main-is:             Main.hs
@@ -39,4 +39,5 @@ executable advent2021
     vector,
     parser-combinators,
     template-haskell,
-    raw-strings-qq
+    raw-strings-qq,
+    doctest

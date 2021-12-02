@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 
 module Advent02 where
 
@@ -36,6 +37,10 @@ import Data.Foldable (Foldable(foldl'))
 
 day2 :: String -> Integer
 day2 = multiple . map (process . words) . lines
+
+-- | Day2 shouldn't depend on input order
+-- >>> day2 test_input == day2 (unlines . reverse . lines $ test_input)
+-- True
 
 day2b :: String -> Integer
 day2b = uncurry (*) . snd . move . map process' . filter (not . null) . map words . lines
