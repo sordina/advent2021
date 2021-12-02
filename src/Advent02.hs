@@ -30,10 +30,9 @@ Using this new interpretation of the commands, calculate the horizontal position
 
 -}
 
-import Text.RawString.QQ ( r )
+import Text.RawString.QQ (r)
 import Control.Arrow ((&&&))
 import Data.Foldable (Foldable(foldl'))
-import Data.Functor.Identity (Identity(..))
 
 day2 :: String -> Integer
 day2 = multiple . map (process . words) . lines

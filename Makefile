@@ -1,5 +1,5 @@
 .PHONY: all
-all: day1 day1b day2
+all: day1 day1b day2 day2b
 
 .PHONY: day1
 day1:
@@ -14,4 +14,9 @@ day1b:
 .PHONY: day2
 day2:
 	cabal run advent2021 2 < data/day2.input
+	@echo
+
+.PHONY: day2b
+day2:
+	cabal run advent2021 2b < data/day2.input
 	@echo
