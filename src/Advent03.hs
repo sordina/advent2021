@@ -80,84 +80,6 @@ import Data.Char (digitToInt)
 import Data.Functor.Classes (readBinaryWith)
 import Data.Function ( on )
 
-day3 :: String -> Integer
-day3 = uncurry (*) . (readBinary &&& readBinary . map complement) . mostCommonBits . lines
-
--- >>> day3 testInput
--- 198
-
-headErr :: [Char] -> [p] -> p
-headErr s [] = error s
-headErr _ (x:_) = x
-
-day3b :: String -> (Integer, Integer)
-day3b = (readBinary . headErr "h1" . co2 &&& readBinary . headErr "h2" . oxygen) . filter (not . null) . lines
-
-oxygen :: [String] -> [String]
-oxygen ls = reduce step (length . headErr "h3" $ ls) 0 ls
-
-co2 :: [String] -> [String]
-co2 ls = reduce stepCo2 (length . headErr "h4" $ ls) 0 ls
-
-reduce :: (Int -> [String] -> [String]) -> Int -> Int -> [String] -> [String]
-reduce _ _ _ [l] = [l]
-reduce s m n ls | n >= m = ls
-reduce s m n ls = reduce s m (succ n) (s n ls)
-
-step :: Int -> [String] -> [String]
-step n ls = filter (hasAt n (mostCommonBitAt n '1' ls)) ls
-
-stepCo2 :: Int -> [String] -> [String]
-stepCo2 n ls = filter (hasAt n (leastCommonBitAt n '0' ls)) ls
-
-mostCommonBitAt :: Int -> Char -> [String] -> Char
-mostCommonBitAt n d ls = mostCommonBits' d ls !! n
-
-leastCommonBitAt :: Int -> Char -> [String] -> Char
-leastCommonBitAt n d ls = leastCommonBits' d ls !! n
-
-hasAt :: Int -> Char -> String -> Bool
-hasAt n c s = s !! n == c
-
--- >>> day3b testInput
--- h1
-
-readBinary :: String -> Integer
-readBinary = fst . headErr "h5" . readInt 2 (`elem` "01") digitToInt
-
-complement :: Char -> Char
-complement '0' = '1'
-complement '1' = '0'
-complement _ = error "nb1"
-
-mostCommonBits :: [[Char]] -> [Char]
-mostCommonBits = map tally . transpose
-
-mostCommonBits' :: Char -> [[Char]] -> [Char]
-mostCommonBits' d = map (maxOr d . tally') . transpose
-
-leastCommonBits' :: Char -> [[Char]] -> [Char]
-leastCommonBits' d = map (minOr d . tally') . transpose
-
-tally :: [Char] -> Char
-tally = headErr "h6" . headErr "h7" . sortOn (negate . length) . group . sort
-
-tally' :: [Char] -> [(Char, Int)]
-tally' = map (headErr "h8" &&& length) . group . sort @Char
-
-maxOr :: Char -> [(Char, Int)] -> Char
-maxOr _ [(c,n)] = c
-maxOr d l | length (groupBy ((==) `on` snd) l) == 1 = d
-maxOr _ l = fst . headErr "h9" . sortOn (negate . snd) $ l
-
-minOr :: Char -> [(Char, Int)] -> Char
-minOr _ [(c,n)] = complement c
-minOr d [(c1,n1), (c2,n2)]
-    | n1 == n2 = d
-    | n1 >  n2 = c2
-    | n2 >  n1 = c1
-minOr _ _ = error "nb2"
-
 testInput :: String
 testInput = [r|
 00100
@@ -173,3 +95,81 @@ testInput = [r|
 00010
 01010
 |]
+
+day3 :: String -> Integer
+day3 = uncurry (*) . (readBinary &&& readBinary . map complement) . mostCommonBits . lines
+
+day3b :: String -> (Integer, Integer)
+day3b = (readBinary . head . co2 &&& readBinary . head . oxygen) . filter (not . null) . lines
+
+-- >>> day3 testInput
+-- 198
+
+-- >>> day3b testInput
+-- (10,23)
+
+-- Day 3 Helpers
+
+mostCommonBits :: [[Char]] -> [Char]
+mostCommonBits = map tally . transpose
+
+tally :: [Char] -> Char
+tally = head . head . sortOn (negate . length) . group . sort
+
+readBinary :: String -> Integer
+readBinary = fst . head . readInt 2 (`elem` "01") digitToInt
+
+complement :: Char -> Char
+complement '0' = '1'
+complement '1' = '0'
+complement _ = error "nb1"
+
+-- Day 3b Helpers
+
+oxygen :: [String] -> [String]
+oxygen ls = reduce stepOxygen (length . head $ ls) 0 ls
+
+co2 :: [String] -> [String]
+co2 ls = reduce stepCo2 (length . head $ ls) 0 ls
+
+reduce :: (Int -> [String] -> [String]) -> Int -> Int -> [String] -> [String]
+reduce _ _ _ [l] = [l]
+reduce s m n ls | n >= m = ls
+reduce s m n ls = reduce s m (succ n) (s n ls)
+
+stepOxygen :: Int -> [String] -> [String]
+stepOxygen n ls = filter (hasAt n (mostCommonBitAt n '1' ls)) ls
+
+stepCo2 :: Int -> [String] -> [String]
+stepCo2 n ls = filter (hasAt n (leastCommonBitAt n '0' ls)) ls
+
+mostCommonBitAt :: Int -> Char -> [String] -> Char
+mostCommonBitAt n d ls = mostCommonBits' d ls !! n
+
+leastCommonBitAt :: Int -> Char -> [String] -> Char
+leastCommonBitAt n d ls = leastCommonBits' d ls !! n
+
+hasAt :: Int -> Char -> String -> Bool
+hasAt n c s = s !! n == c
+
+mostCommonBits' :: Char -> [[Char]] -> [Char]
+mostCommonBits' d = map (maxOr d . tally') . transpose
+
+leastCommonBits' :: Char -> [[Char]] -> [Char]
+leastCommonBits' d = map (minOr d . tally') . transpose
+
+tally' :: [Char] -> [(Char, Int)]
+tally' = map (head &&& length) . group . sort @Char
+
+maxOr :: Char -> [(Char, Int)] -> Char
+maxOr _ [(c,n)] = c
+maxOr d l | length (groupBy ((==) `on` snd) l) == 1 = d
+maxOr _ l = fst . head . sortOn (negate . snd) $ l
+
+minOr :: Char -> [(Char, Int)] -> Char
+minOr _ [(c,n)] = complement c
+minOr d [(c1,n1), (c2,n2)]
+    | n1 == n2 = d
+    | n1 >  n2 = c2
+    | n2 >  n1 = c1
+minOr _ _ = error "nb2"
