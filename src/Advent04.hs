@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Advent04 where
 
@@ -148,6 +149,7 @@ day4 s = turns ns bs
 readInteger :: String -> Integer
 readInteger = read @Integer
 
+-- | Example input run for day4
 -- >>> day4 testInput
 -- 4512
 
@@ -175,5 +177,6 @@ day4b s = turns' ns bs
     ns = map readInteger (splitOn "," (concat nss))
     bs = map (map (map ((False,) . readInteger) . words)) bss
 
+-- | Example input for day4b
 -- >>> day4b testInput
 -- 1924

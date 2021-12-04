@@ -67,9 +67,11 @@ down 8
 forward 2
 |]
 
+-- | Example day2 test_input
 -- >>> day2 test_input
 -- 150
 
+-- | Example day2b test_input
 -- >>> day2b test_input
 -- 900
 

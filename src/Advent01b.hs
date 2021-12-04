@@ -55,6 +55,7 @@ test_input = [199, 200, 208, 210, 200, 207, 240, 269, 260, 263]
 test_solution :: Int
 test_solution = solution test_input
 
+-- | Example day1b test_solution
 -- >>> test_solution
 -- 5
 

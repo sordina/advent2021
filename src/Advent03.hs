@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Advent03 where
 
@@ -102,9 +103,11 @@ day3 = uncurry (*) . (readBinary &&& readBinary . map complement) . mostCommonBi
 day3b :: String -> (Integer, Integer)
 day3b = (readBinary . head . co2 &&& readBinary . head . oxygen) . filter (not . null) . lines
 
+-- | Example day3 testInput
 -- >>> day3 testInput
 -- 198
 
+-- | Example day3b testInput
 -- >>> day3b testInput
 -- (10,23)
 
