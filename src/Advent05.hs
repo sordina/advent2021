@@ -159,31 +159,15 @@ onLine _ _ = 0
 -- >>> onLine (2,2) ((2,1),(2,3))
 -- 1
 
-boundingBox :: [Line] -> Line
-boundingBox = (baz minimum &&& baz maximum) . concatMap getPairs
-    where
-    baz f ps = (f $ map fst ps, f $ map snd ps)
-
--- | Testing boundingBox
--- >>> boundingBox [((1,1),(-2,18)),((5,6),(7,8))]
--- ((-2,1),(7,18))
-
-getPairs :: Line -> [Point]
-getPairs (a,b) = [a,b]
-
 counts :: [Line] -> [Int]
-counts ls = map (\p -> sum $ map (onLine p) ls) (enumerateBox $ boundingBox ls)
+counts ls = M.elems $ M.fromListWith (+) (concatMap (map (,1) . drawLine) $ filter manhattan ls)
+
+manhattan :: (Eq a1, Eq a2) => ((a1, a2), (a1, a2)) -> Bool
+manhattan ((a,b),(c,d)) = a == c || b == d
 
 -- | Testing counts
 -- >>> counts [((0,0),(0,1)), ((0,0),(1,0))]
--- [2,1,1,0]
-
-enumerateBox :: Line -> [Point]
-enumerateBox ((a,b),(c,d)) = [(x,y) | x <- [a..c], y <- [b..d]]
-
--- | Testing enumerateBox
--- >>> enumerateBox ((0,0),(1,2))
--- [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
+-- [2,1,1]
 
 -- | Example input for day5
 -- >>> parseLines testInput
