@@ -1,5 +1,5 @@
-all: day1 day1b day2 day2b day3 day3b day4 day4b
-.PHONY: all day1 day1b day2 day2b day3 day3b day4 day4b
+all: day1 day1b day2 day2b day3 day3b day4 day4b day5 day5b
+.PHONY: all day1 day1b day2 day2b day3 day3b day4 day4b day5 day5b
 
 day1:
 	cabal run advent2021 1 < data/day1.input
@@ -31,4 +31,12 @@ day4:
 
 day4b:
 	cabal run advent2021 4b < data/day4.input
+	@echo
+
+day5:
+	cabal run advent2021 5 < data/day5.input
+	@echo
+
+day5b:
+	cabal run advent2021 5b < data/day5.input
 	@echo
