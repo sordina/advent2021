@@ -81,7 +81,6 @@ import Data.List.Split (splitOn, chunksOf)
 import Data.Maybe (mapMaybe)
 import Data.Bool (bool)
 import Control.Arrow ( Arrow((&&&), (***)) )
-import Control.Parallel.Strategies (rpar, parMap)
 import Data.Map.Strict as M (insertWith, fromListWith, elems)
 
 testInput :: String
@@ -107,19 +106,6 @@ testInput = [r|
 day5b :: String -> Int
 day5b = length . filter (>= 2) . counts'' . parseLines
 
-onLine' :: Point -> [Point] -> Int
-onLine' p ps
-    | p `elem` ps = 1
-    | otherwise = 0
-
-onLine'' :: Point -> Line -> Int
-onLine'' (x,y) ((x1,y1),(x2,y2))
-    | ratio x x1 x2 === ratio y y1 y2 = 1
-    | otherwise                       = 0
-    where
-    ratio a b c = (b-a,c-a)
-    (a,b) === (c,d) = (a*c,b*c) == (a*c,a*d)
-
 drawLine :: Line -> [Point]
 drawLine (p1@(x1,y1),p2@(x2,y2))
     | p1 == p2  = [p2]
@@ -128,11 +114,6 @@ drawLine (p1@(x1,y1),p2@(x2,y2))
     mt b a | a < b = succ a
            | a > b = pred a
            | otherwise = a
-
-counts' :: [Line] -> [Int]
-counts' ls = map (\p -> sum $ parMap rpar (onLine'' p) ls) (nub $ concat drawnLines)
-    where
-    drawnLines = map drawLine ls
 
 counts'' :: [Line] -> [Int]
 counts'' ls = filter (>=2) $ M.elems $ M.fromListWith (+) (map (,1) $ concatMap drawLine ls)
