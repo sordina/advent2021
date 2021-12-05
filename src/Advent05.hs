@@ -104,8 +104,6 @@ testInput = [r|
 -- >>> day5b testInput
 -- 12
 
--- Final answer: 20666
-
 day5b :: String -> Int
 day5b = length . filter (>= 2) . counts'' . parseLines
 
