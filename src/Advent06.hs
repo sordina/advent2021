@@ -57,12 +57,23 @@ In this example, after 18 days, there are a total of 26 fish. After 80 days, the
 
 Find a way to simulate lanternfish. How many lanternfish would there be after 80 days?
 
+--- Part Two ---
+
+Suppose the lanternfish live forever and have unlimited food and space. Would they take over the entire ocean?
+
+After 256 days in the example above, there would be a total of 26984457539 lanternfish!
+
+How many lanternfish would there be after 256 days?
+
 -}
 
 import Text.RawString.QQ (r)
 import Data.Bool (bool)
 import Data.Char (isDigit)
 import Data.Maybe (mapMaybe)
+import Data.List (group, sort)
+import Control.Arrow ((&&&))
+import Data.IntMap (fromListWith, toList)
 
 testInput :: String
 testInput = "3,4,3,1,2"
@@ -94,11 +105,30 @@ fish :: Int -> (Int, Maybe Int)
 fish 0 = (6, Just 8)
 fish n = (pred n, Nothing)
 
--- Part 2
-
 -- | Testing day6
 -- >>> day6 testInput
 -- 5934
 
 day6 :: String -> Int
 day6 = length . (!! 80) . generations . parseInput
+
+-- Part 2
+
+step' :: [(Int, Integer)] -> [(Int, Integer)]
+step' = toList . fromListWith (+) . school'
+
+school' :: [(Int, Integer)] -> [(Int, Integer)]
+school' = concatMap fish'
+
+fish' :: (Int, Integer) -> [(Int, Integer)]
+fish' (0,n) = [(6,n), (8,n)]
+fish' (x,n) = [(pred x, n)]
+
+formatFish :: [Int] -> [(Int, Integer)]
+formatFish = map (head &&& fromIntegral . length) . group . sort
+
+day6b :: String -> Integer
+day6b = sum . map snd . (!! 256) . iterate step' . formatFish . parseInput
+
+-- >>> day6b testInput
+-- 16
