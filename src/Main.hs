@@ -5,12 +5,13 @@ import           Data.List          (intercalate)
 import           Data.Maybe         (fromMaybe)
 import           System.Environment (getArgs)
 
-import qualified Advent01  (day1)
-import qualified Advent01b (day1b)
-import qualified Advent02  (day2, day2b)
-import qualified Advent03  (day3, day3b)
-import qualified Advent04  (day4, day4b)
-import qualified Advent05  (day5, day5b)
+import qualified Advent01
+import qualified Advent01b
+import qualified Advent02
+import qualified Advent03
+import qualified Advent04
+import qualified Advent05
+import qualified Advent06
 
 interactShow :: Show a => (String -> a) -> IO ()
 interactShow f = interact (show . f)
@@ -27,6 +28,7 @@ days =
     , ("4b", interactShow Advent04.day4b)
     , ("5",  interactShow Advent05.day5)
     , ("5b", interactShow Advent05.day5b)
+    , ("6",  interactShow Advent06.day6)
     ]
 
 help :: a
