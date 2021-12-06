@@ -91,6 +91,8 @@ generations = iterate step
 -- | Testing step
 -- >>> step $ parseInput testInput
 -- [2,3,2,0,1]
+-- >>> step $ step $ parseInput testInput
+-- [1,2,1,6,0,8]
 
 step :: [Int] -> [Int]
 step = grow . school
@@ -130,5 +132,6 @@ formatFish = map (head &&& fromIntegral . length) . group . sort
 day6b :: String -> Integer
 day6b = sum . map snd . (!! 256) . iterate step' . formatFish . parseInput
 
+-- | Testing day6b
 -- >>> day6b testInput
--- 16
+-- 26984457539
