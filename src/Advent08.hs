@@ -132,7 +132,7 @@ import Data.List.Split (splitOn)
 import Text.RawString.QQ (r)
 import Data.Maybe (mapMaybe, fromMaybe, catMaybes)
 import Data.List (sort, group, sortBy, groupBy, findIndex)
-import Control.Arrow ((&&&), Arrow (second))
+import Control.Arrow ((&&&), Arrow (second, (***)))
 import Data.Ord (comparing)
 import Data.Function (on)
 import Data.Map (Map, unionsWith)
@@ -175,23 +175,24 @@ counts = map (map fst &&& length) . groupBy ((==) `on` snd) . sortBy (comparing 
 -- Part 2
 
 day8b :: String -> Integer
-day8b = sum . map solve2 . parseInput
+day8b = sum . map solve2 . parseInput2
+
+parseInput2 :: String -> [(Set (Set Char), [Set Char])]
+parseInput2 = map ( Set.fromList . map Set.fromList *** map Set.fromList) . parseInput
 
 -- | Testing day8b
 -- >>> day8b testInput
 -- 61229
 
-solve2 :: ([String],[String]) -> Integer
+solve2 :: (Set (Set Char), [Set Char]) -> Integer
 solve2 = read . digits
 
-digits :: ([String],[String]) -> String
-digits (input, output) = mapMaybe ((`lookup` segmentMapInv) . sort) segmentsMatch
+digits :: (Set (Set Char), [Set Char]) -> String
+digits (input, output) = mapMaybe (`lookup` segmentMapInv) segmentsMatch
   where
-  sortedOutput  = map sort output
-  sortedInput   = map sort input
-  segmentsMatch = map (sort . concatMap lookupDigit) sortedOutput
-  lookupDigit c = maybe "" pure $ Map.lookup c finalMap
-  finalMap      = reMap $ filter (testMappings sortedInput) permutedMap
+  segmentsMatch = map (Set.fromList . mapMaybe corresponds . Set.toList) output
+  corresponds c = Map.lookup c finalMap
+  finalMap      = reMap $ filter (testMappings input) permutedMap
   permutedMap   = permuteMap subMapping
   subMapping    = fixEq (step input) openMapping
   openMapping   = Map.fromList $ map (, lettersSet) letters
@@ -199,7 +200,7 @@ digits (input, output) = mapMaybe ((`lookup` segmentMapInv) . sort) segmentsMatc
   letters       = ['a'..'g']
 
 -- | Testing digits
--- >>> map digits $ parseInput $ head $ filter (not . null) $ lines testInput
+-- >>> map digits $ parseInput2 $ head $ filter (not . null) $ lines testInput
 -- ["8394"]
 
 fixEq :: Eq a => (a -> a) -> a -> a
@@ -208,13 +209,13 @@ fixEq f x
   | otherwise = fixEq f y
   where y = f x
 
-step :: [String] -> Map Char (Set Char) -> Map Char (Set Char)
-step ss m = unionsWith intersection $ map (matchingLengths ss m) ss
+step :: Set (Set Char) -> Map Char (Set Char) -> Map Char (Set Char)
+step ss m = unionsWith intersection $ map (matchingLengths ss m) (Set.toList ss)
 
-matchingLengths :: [String] -> Map Char (Set Char) -> String -> Map Char (Set Char)
-matchingLengths ss m s = Map.fromList $ map (,bar) s
+matchingLengths :: Set (Set Char) -> Map Char (Set Char) -> Set Char -> Map Char (Set Char)
+matchingLengths ss m s = Map.fromList $ map (,bar) (Set.toList s)
   where
-  bar = Set.unions $ map Set.fromList $ filter ((== length s) . length) segments
+  bar = Set.unions $ Set.filter ((== Set.size s) . Set.size) segments
 
 reMap :: [[(Char,Char)]] -> Map Char Char
 reMap = Map.unions . map Map.fromList
@@ -239,11 +240,11 @@ expunge c = map (second (Set.delete c))
 -- >>> expunge 'a' [('x', (Set.fromList "abc")), ('y', (Set.fromList "fab"))]
 -- [('x',fromList "bc"),('y',fromList "bf")]
 
-testMappings :: [String] -> [(Char,Char)] -> Bool
-testMappings ws m = sort (map sort segments) == sort (map (sort . getMapping m) ws)
+testMappings :: Set (Set Char) -> [(Char,Char)] -> Bool
+testMappings ws m = segments == Set.fromList (map (getMapping m . Set.toList) (Set.toList ws))
 
-getMapping :: [(Char,Char)] -> String -> String
-getMapping m = mapMaybe (`lookup` m)
+getMapping :: [(Char,Char)] -> String -> Set Char
+getMapping m = Set.fromList . mapMaybe (`lookup` m)
 
 -- Data
 
@@ -261,14 +262,14 @@ egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb
 gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
 |]
 
-segmentMapInv :: [(String, Char)]
+segmentMapInv :: [(Set Char, Char)]
 segmentMapInv = map swap segmentMap
 
-segmentMap :: [(Char, String)]
-segmentMap = [('0',"abcefg"),('1',"cf"),('2',"acdeg"),('3',"acdfg"),('4',"bcdf"),('5',"abdfg"),('6',"abdefg"),('7',"acf"),('8',"abcdefg"),('9',"abcdfg")]
+segmentMap :: [(Char, Set Char)]
+segmentMap = map (second Set.fromList) [('0', "abcefg"),('1',"cf"),('2',"acdeg"),('3',"acdfg"),('4',"bcdf"),('5',"abdfg"),('6',"abdefg"),('7',"acf"),('8',"abcdefg"),('9',"abcdfg")]
 
-segments :: [String]
-segments = map snd segmentMap
+segments :: Set (Set Char)
+segments = Set.fromList $ map snd segmentMap
 
 {- Table of Digits Canonical Mapping
 
