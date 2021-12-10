@@ -101,7 +101,7 @@ Find the completion string for each incomplete line, score the completion string
 
 import Text.RawString.QQ (r)
 import Data.Tuple (swap)
-import Control.Arrow (Arrow(first))
+import Control.Arrow (Arrow(first, (***)))
 import Data.Maybe (fromMaybe)
 import Data.List (sort)
 
@@ -114,25 +114,28 @@ day10 = sum . map (score "") . parseInput
 
 score :: String -> String -> Integer
 score _ [] = 0
-score ss (c:cs) = case (ss, lookup c open, lookup c closed) of
-  (_  , Just _ , _      ) -> score (c:ss) cs                     -- Found an open, add it to the stack and recur on the remaining input
-  ([] , _      , Just _ ) -> fromMaybe 0 $ lookup c closedScores -- Found a closed, and no stack. Look up the score for the closed
-  (x:s, _      , Just y )                                        -- Found a closed, and a stack
-              | x == y    -> score s cs                          --   if it's a match pop and recur on the remaining input
-              | otherwise -> fromMaybe 0 $ lookup c closedScores --   if it's not a match, look up the score for the closed
-  (_  , Nothing, Nothing) -> score ss cs                         -- Ignore other characters and recur
+score ss (c:cs) = case (ss, lookup (Open c) open, lookup (Close c) closed) of
+  (_  , Just _ , _      )   -> score (c:ss) cs                             -- Found an open, add it to the stack and recur on the remaining input
+  ([] , _      , Just _ )   -> fromMaybe 0 $ lookup (Close c) closedScores -- Found a closed, and no stack. Look up the score for the closed
+  (x:s, _      , Just y )                                                  -- Found a closed, and a stack
+              | Open x == y -> score s cs                                  --   if it's a match pop and recur on the remaining input
+              | otherwise   -> fromMaybe 0 $ lookup (Close c) closedScores --   if it's not a match, look up the score for the closed
+  (_  , Nothing, Nothing)   -> score ss cs                                 -- Ignore other characters and recur
 
-open :: [(Char, Char)]
+newtype Open  = Open  { getOpen  :: Char } deriving Eq
+newtype Close = Close { getClose :: Char } deriving Eq
+
+scores :: [((Open, Close), Integer)]
+scores = map (first (Open *** Close)) [(('(',')'), 3), (('[',']'), 57),(('{','}'), 1197),(('<','>'), 25137)]
+
+open :: [(Open, Close)]
 open = map fst scores
 
-closed :: [(Char, Char)]
+closed :: [(Close, Open)]
 closed = map swap open
 
-closedScores :: [(Char, Integer)]
+closedScores :: [(Close, Integer)]
 closedScores = map (first snd) scores
-
-scores :: [((Char, Char), Integer)]
-scores = [(('(',')'), 3), (('[',']'), 57),(('{','}'), 1197),(('<','>'), 25137)]
 
 parseInput :: String -> [String]
 parseInput = lines
@@ -153,24 +156,25 @@ day10b = middle . sort . filter (>0) . map (score2 "") . parseInput
 middle :: [Integer] -> Integer
 middle xs = xs !! (length xs `div` 2)
 
-incompleteScores :: [(Char, Integer)]
-incompleteScores = [ (')',1) , (']', 2) , ('}', 3) , ('>', 4) ]
+incompleteScores :: [(Close, Integer)]
+incompleteScores = map (first Close) [ (')',1) , (']', 2) , ('}', 3) , ('>', 4) ]
 
 score2 :: String -> String -> Integer
 score2 [] [] = 0                                                  -- If we consume all input and have no stack - finish
 score2 ss [] = remainingScore 0 ss                                -- If we consume all input but have stack remaing calculate score
-score2 ss (c:cs) = case (ss, lookup c open, lookup c closed) of
-  (_  , Just _ , _      ) -> score2 (c:ss) cs                     -- Found an open, add it to the stack and recur on the remaining input
-  ([] , _      , Just _ ) -> 0                                    -- Found a closed and no stack - finish
+score2 ss (c:cs) = case (ss, lookup (Open c) open, lookup (Close c) closed) of
+  (_  , Just _ , _      )   -> score2 (c:ss) cs                   -- Found an open, add it to the stack and recur on the remaining input
+  ([] , _      , Just _ )   -> 0                                  -- Found a closed and no stack - finish
   (x:s, _      , Just y )                                         -- Found a closed, and a stack
-              | x == y    -> score2 s cs                          --   if it's a match pop and recur on the remaining input
-              | otherwise -> 0                                    --   if it's not a match - finish
-  (_  , Nothing, Nothing) -> score2 ss cs                         -- Ignore other characters and recur
+              | Open x == y -> score2 s cs                        --   if it's a match pop and recur on the remaining input
+              | otherwise   -> 0                                  --   if it's not a match - finish
+  (_  , Nothing, Nothing)   -> score2 ss cs                       -- Ignore other characters and recur
 
 remainingScore :: Integer -> String -> Integer
-remainingScore x []     = x
-remainingScore x (c:cs) = remainingScore (x * 5 + fromMaybe 0 (lookup c open >>= flip lookup incompleteScores)) cs
-
+remainingScore
+  = foldl \ x c
+    -> x * 5
+         + fromMaybe 0 (lookup (Open c) open >>= flip lookup incompleteScores)
 
 -- Data
 

@@ -9,8 +9,9 @@ build-type:          Simple
 extra-source-files:  README.md
 
 executable advent2021
-  main-is:             Main.hs
+  main-is: Main.hs
   other-modules:
+    Utils
     Advent01
     Advent01b
     Advent02
