@@ -178,7 +178,7 @@ day8b :: String -> Integer
 day8b = sum . map solve2 . parseInput2
 
 parseInput2 :: String -> [(Set (Set Char), [Set Char])]
-parseInput2 = map ( Set.fromList . map Set.fromList *** map Set.fromList) . parseInput
+parseInput2 = map (Set.fromList . map Set.fromList *** map Set.fromList) . parseInput
 
 -- | Testing day8b
 -- >>> day8b testInput
