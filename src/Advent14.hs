@@ -61,15 +61,52 @@ This polymer grows quickly. After step 5, it has length 97; After step 10, it ha
 
 Apply 10 steps of pair insertion to the polymer template and find the most and least common elements in the result. What do you get if you take the quantity of the most common element and subtract the quantity of the least common element?
 
+
+--- Part Two ---
+
+The resulting polymer isn't nearly strong enough to reinforce the submarine. You'll need to run more steps of the pair insertion process; a total of 40 steps should do it.
+
+In the above example, the most common element is B (occurring 2192039569602 times) and the least common element is H (occurring 3849876073 times); subtracting these produces 2188189693529.
+
+Apply 40 steps of pair insertion to the polymer template and find the most and least common elements in the result. What do you get if you take the quantity of the most common element and subtract the quantity of the least common element?
+
 -}
 
 import Text.RawString.QQ (r)
 import Data.List.Split (splitOn)
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&), Arrow (first))
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
-import Data.List (group, sort, minimumBy)
+import Data.List (group, sort, minimumBy, sortOn)
 import Data.Ord (comparing)
+
+-- | Testing day14b
+-- >>> day14b testInput
+-- 2188189693529
+
+-- | Testing solve2
+-- >>> sortOn snd . Map.toList . postProcess . (!!40) . solve2 . first preProcess . parseInput $ testInput
+-- [('H',3849876073),('C',6597635301),('N',1096047802353),('B',2192039569602)]
+
+day14b :: String -> Integer
+day14b = uncurry (-) . (maximum &&& minimum) . postProcess . (!!40) . solve2 . first preProcess . parseInput
+
+postProcess :: (Integral b, Ord k) => Map.Map (k, k) b -> Map.Map k b
+postProcess m = Map.map ((`div` 2) . succ) $ Map.fromListWith (+) $ concatMap (\((a,b),n) -> [(a,n),(b,n)]) $ Map.toList m
+
+preProcess :: String -> Map.Map (Char,Char) Integer
+preProcess l = Map.fromListWith (+) $ zipWith (\a b -> ((a,b),1)) l (tail l)
+
+solve2 :: (Map.Map (Char,Char) Integer, Map.Map (Char,Char) Char) -> [Map.Map (Char,Char) Integer]
+solve2 (c,r) = iterate (step2 r) c
+
+step2 :: Map.Map (Char,Char) Char -> Map.Map (Char,Char) Integer -> Map.Map (Char,Char) Integer
+step2 r m = Map.fromListWith (+) $ concatMap foo $ Map.toList m
+  where
+    foo (p@(a,b),n) = case Map.lookup p r of
+      Nothing -> [(p,n)]
+      Just x -> [((a,x),n), ((x,b),n)]
+
 
 -- | Testing day14
 -- >>> day14 testInput
