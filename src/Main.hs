@@ -18,6 +18,7 @@ import qualified Advent09
 import qualified Advent10
 import qualified Advent11
 import qualified Advent12
+import qualified Advent13
 
 interactShow :: Show a => (String -> a) -> IO ()
 interactShow f = interact (show . f)
@@ -48,6 +49,8 @@ days =
     , ("11b",interactShow Advent11.day11b)
     , ("12", interactShow Advent12.day12)
     , ("12b",interactShow Advent12.day12b)
+    , ("13", interactShow Advent13.day13)
+    , ("13b",interact     Advent13.day13b)
     ]
 
 help :: a
