@@ -5,6 +5,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE NegativeLiterals #-}
 
 module Advent11 where
 
@@ -124,16 +125,23 @@ After 100 steps, there have been a total of 1656 flashes.
 
 Given the starting energy levels of the dumbo octopuses in your cavern, simulate 100 steps. How many total flashes are there after 100 steps?
 
+--- Part Two ---
+
+It seems like the individual flashes aren't bright enough to navigate. However, you might have a better option: the flashes seem to be synchronizing!
+
+In the example above, the first time all octopuses flash simultaneously is step 195:
+
 -}
 
 import Text.RawString.QQ (r)
 import Utils ( fixEq )
 import Control.Arrow ((&&&))
-import Data.List ((\\))
+import Data.List ((\\), findIndex)
 import Control.Lens ( (%=), At(at), (.=) )
 
 import Data.Map            qualified as Map
 import Control.Monad.State qualified as State
+import Data.Maybe (fromMaybe)
 
 -- | Testing day11
 -- >>> day11 testInput 
@@ -231,3 +239,10 @@ testInput = unlines $ words [r|
 4846848554
 5283751526
 |]
+
+-- | Testing day11b
+-- >>> day11b testInput 
+-- 195
+
+day11b :: String -> Int
+day11b = fromMaybe -1 . findIndex (\(G (x,y) g) -> length (flashed g) == x*y) . take 1000 . generations . parseInput
