@@ -143,9 +143,13 @@ paths n v m
   | otherwise = do
     let xs = maybe [] Set.toList (Map.lookup n m)
     x <- xs
-    if isLower (head n)
+    (n:) <$> if isLower (head n)
       then paths x (Set.insert n v) m
       else paths x v m
+
+-- | Testing paths
+-- >>> paths "start" Set.empty $ parseInput testInput
+-- [["start","A","b","A","c","A","end"],["start","A","b","A","end"],["start","A","b","end"],["start","A","c","A","b","A","end"],["start","A","c","A","b","end"],["start","A","c","A","end"],["start","A","end"],["start","b","A","c","A","end"],["start","b","A","end"],["start","b","end"]]
 
 parseInput :: String -> Map.Map String (Set.Set String)
 parseInput = Map.fromListWith Set.union . concatMap (pair . splitOn "-") . words
