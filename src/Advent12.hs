@@ -186,7 +186,7 @@ day12b = length . paths2' "start" Map.empty . Map.map (Set.delete "start") . par
 paths2' :: String -> Map.Map String Int -> Map.Map String (Set.Set String) -> Set.Set [String]
 paths2' n v m = Set.unions $ map (Set.fromList . paths2 n v m) rs
   where
-  rs =  Map.keys m
+  rs = filter (isLower . head) $ Map.keys m
 
 paths2 :: String -> Map.Map String Int -> Map.Map String (Set.Set String) -> String -> [[String]]
 paths2 "end" _ _ _ = [["end"]]
