@@ -134,7 +134,7 @@ import Data.Char (isLower)
 -- 226
 
 day12 :: String -> Int
-day12 = length . concat . paths "start" Set.empty . parseInput
+day12 = length . paths "start" Set.empty . parseInput
 
 paths :: String -> Set.Set String -> Map.Map String (Set.Set String) -> [[String]]
 paths "end" _ _ = [["end"]]
