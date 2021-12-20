@@ -131,7 +131,7 @@ import Data.Foldable (foldl')
 import Data.Bool (bool)
 import Control.Arrow ((&&&))
 
--- | Testing day12
+-- | Testing day13
 -- >>> day13 testInput
 -- 17
 
