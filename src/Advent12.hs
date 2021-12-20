@@ -112,14 +112,29 @@ start-RW
 
 How many paths through this cave system are there that visit small caves at most once?
 
+--- Part Two ---
+
+After reviewing the available paths, you realize you might have time to visit a single small cave twice. Specifically, big caves can be visited any number of times, a single small cave can be visited at most twice, and the remaining small caves can be visited at most once. However, the caves named start and end can only be visited exactly once each: once you leave the start cave, you may not return to it, and once you reach the end cave, the path must end immediately.
+
+Now, the 36 possible paths through the first example above are:
+
+start,A,b,A,b,A,c,A,end
+start,A,b,A,b,A,end
+...
+
+The slightly larger example above now has 103 paths through it, and the even larger example now has 3509 paths through it.
+
+Given these new rules, how many paths through this cave system are there?
+
 -}
 
 import Text.RawString.QQ (r)
 import Data.List.Split (splitOn)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, fromMaybe)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Char (isLower)
+import Data.List (nub)
 
 -- | Testing day12
 -- >>> day12 testInput
@@ -132,6 +147,20 @@ import Data.Char (isLower)
 -- | Testing day12 large
 -- >>> day12 testInputLarge
 -- 226
+
+
+-- | Testing day12b
+-- >>> day12b testInput
+-- 36
+
+-- | Testing day12b medium
+-- >>> day12b testInputMedium
+-- 103
+
+-- | Testing day12b large
+-- >>> day12b testInputLarge
+-- 3509
+
 
 day12 :: String -> Int
 day12 = length . paths "start" Set.empty . parseInput
@@ -150,6 +179,30 @@ paths n v m
 -- | Testing paths
 -- >>> paths "start" Set.empty $ parseInput testInput
 -- [["start","A","b","A","c","A","end"],["start","A","b","A","end"],["start","A","b","end"],["start","A","c","A","b","A","end"],["start","A","c","A","b","end"],["start","A","c","A","end"],["start","A","end"],["start","b","A","c","A","end"],["start","b","A","end"],["start","b","end"]]
+
+day12b :: String -> Int
+day12b = length . paths2' "start" Map.empty . Map.map (Set.delete "start") . parseInput
+
+paths2' :: String -> Map.Map String Int -> Map.Map String (Set.Set String) -> Set.Set [String]
+paths2' n v m = Set.unions $ map (Set.fromList . paths2 n v m) rs
+  where
+  rs =  Map.keys m
+
+paths2 :: String -> Map.Map String Int -> Map.Map String (Set.Set String) -> String -> [[String]]
+paths2 "end" _ _ _ = [["end"]]
+paths2 n v m r
+  |           c >= 2 = []
+  | n /= r && c == 1 = []
+  | otherwise = do
+    let xs = maybe [] Set.toList (Map.lookup n m)
+    x <- xs
+    (n:) <$> if isLower (head n)
+      then paths2 x (Map.insertWith (+) n 1 v) m r
+      else paths2 x v m r
+  where
+  c = fromMaybe 0 (Map.lookup n v)
+
+-- Helpers
 
 parseInput :: String -> Map.Map String (Set.Set String)
 parseInput = Map.fromListWith Set.union . concatMap (pair . splitOn "-") . words
