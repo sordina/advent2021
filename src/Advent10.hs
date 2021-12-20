@@ -172,7 +172,7 @@ score2 ss (c:cs) = case (ss, lookup (Open c) open, lookup (Close c) closed) of
 
 remainingScore :: Integer -> String -> Integer
 remainingScore
-  = foldl \ x c
+  = foldl $ \x c
     -> x * 5
          + fromMaybe 0 (lookup (Open c) open >>= flip lookup incompleteScores)
 
