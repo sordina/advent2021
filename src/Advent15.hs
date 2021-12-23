@@ -129,7 +129,7 @@ import qualified Data.Map as Map
 import Data.Maybe (fromMaybe, catMaybes, mapMaybe, isJust)
 import Data.Ord (comparing)
 import Data.Foldable (minimumBy)
-import Utils
+import Utils ( crossProductZero )
 import Control.Arrow ((&&&), Arrow ((***), second, first))
 import Data.Function (on)
 import qualified Data.Set as Set
