@@ -64,6 +64,4 @@ executable advent2021
     doctest,
     parallel,
     search-algorithms,
-    unordered-containers,
-    hashable,
-    pqueue
+    unordered-containers
