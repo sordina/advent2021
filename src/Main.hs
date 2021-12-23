@@ -56,6 +56,7 @@ days =
     , ("14", interactShow Advent14.day14)
     , ("14b",interactShow Advent14.day14b)
     , ("15", interactShow Advent15.day15)
+    , ("15b",interactShow Advent15.day15b)
     ]
 
 help :: a

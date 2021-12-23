@@ -18,5 +18,8 @@ parseGrid s = Map.fromList cs
   ls = lines s
   cs = concat $ zipWith (\ y l -> zipWith (\ x c -> ((x, y), read [c])) [0 .. ] l) [0..] ls
 
+-- >>> crossProductZero (2,3)
+-- [(0,0),(0,1),(0,2),(0,3),(1,0),(1,1),(1,2),(1,3),(2,0),(2,1),(2,2),(2,3)]
+
 crossProductZero :: (Num a, Num b, Enum a, Enum b) => (a, b) -> [(a, b)]
 crossProductZero (a,b) = liftM2 (,) [0..a] [0..b]
