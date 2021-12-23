@@ -137,9 +137,7 @@ import Algorithm.Search (aStar)
 
 -- | Testing day15b
 -- >>> day15b testInput
--- WAS WAS 315
--- WAS NOW 532
--- NOW 483
+-- 315
 
 -- Path: (315,[(49,49),(48,49),(47,49),(46,49),(45,49),(45,48),(45,47),(44,47),(43,47),(42,47),(42,46),(41,46),(41,45),(41,44),(41,43),(40,43),(39,43),(38,43),(37,43),(37,42),(37,41),(37,40),(37,39),(36,39),(35,39),(34,39),(34,38),(34,37),(33,37),(33,36),(32,36),(32,35),(32,34),(31,34),(30,34),(29,34),(29,33),(28,33),(27,33),(27,32),(27,31),(27,30),(26,30),(25,30),(24,30),(24,29),(23,29),(22,29),(22,28),(21,28),(20,28),(19,28),(19,27),(19,26),(19,25),(18,25),(17,25),(16,25),(16,24),(16,23),(16,22),(15,22),(15,21),(14,21),(14,20),(14,19),(13,19),(12,19),(12,18),(11,18),(10,18),(9,18),(9,17),(9,16),(8,16),(7,16),(6,16),(5,16),(4,16),(3,16),(3,15),(2,15),(2,14),(2,13),(2,12),(1,12),(0,12),(0,11),(0,10),(0,9),(0,8),(0,7),(0,6),(0,5),(0,4),(0,3),(0,2),(0,1),(0,0)])
 
@@ -185,17 +183,12 @@ day15 = withScore solve' . parseInput
 -- >>> withScore solve' (parseInput testInput)
 -- 40
 
+-- | Testing withScore function
 -- >>> withScore solve' (embiggen $ parseInput testInput)
 -- 315
 
 withScore :: (Num a, Ord k) => (Map.Map k a -> [k]) -> Map.Map k a -> a
 withScore s m = sum $ mapMaybe (`Map.lookup` m) (s m)
-
-{-
-19999
-19111
-11191
--}
 
 solve' :: Map.Map (Int, Int) Int -> [(Int, Int)]
 solve' m = fromMaybe (error "oops!") (findPath (0,0) edge)
@@ -232,26 +225,6 @@ pointsBetween (ax,ay) (bx,by) = map (p1 +~) $ crossProductZero (p2 -~ p1)
 (-~) :: (Num a, Num b) => (a, b) -> (a, b) -> (a, b)
 p1 -~ (c,d) = p1 +~ (negate c, negate d)
 
-
--- >>> compare 1 2
--- LT
-
--- >>> miniScore 0 0 [1,2] [9, undefined]
--- LT
--- >>> miniScore 0 0 [9, undefined] [1,2]
--- GT
--- >>> miniScore 0 0 [9] [9]
--- EQ
-
-miniScore :: (Ord a, Num a) => a -> a -> [a] -> [a] -> Ordering
-miniScore a b [] []                           = compare a b
-miniScore a b [] (y:ys)           | b > a     = LT
-                                  | otherwise = miniScore a (b+y) [] ys
-miniScore a b (x:xs) []           | a > b     = GT
-                                  | otherwise = miniScore (a+x) b xs []
-miniScore a b x'@(x:xs) y'@(y:ys) | a > b     = miniScore a (b+y) x' ys
-                                  | otherwise = miniScore (a+x) b xs y'
-
 parseInput :: String -> Map.Map (Int,Int) Int
 parseInput s = Map.fromList cs
   where
@@ -284,8 +257,9 @@ testInputBT = unlines $ drop 1 $ lines [r|
 11191
 |]
 
+-- | Testing trivially backtracking problem
 -- >>> solve' $ parseInput testInputBT
--- (15,[(4,3),(3,3),(2,3),(1,3),(0,3),(0,2),(0,1),(0,0)])
+-- [(0,1),(0,2),(1,2),(2,2),(2,1),(3,1),(4,1),(4,2)]
 
 
 testInput5 :: String
