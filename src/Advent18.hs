@@ -461,7 +461,7 @@ labelNumPairs' bs   (Pair (VPair l) (VPair r)) = labelNumPairs' (False : bs) l +
 -- [[([False],1),([True,False,False],2),([True,False,True],3),([True,True],4)]]
 
 -- >>> map labelNumPairs (parsePair "[1,[[2,3],4]]")
--- [[([False,False],[2,3])]]
+-- [[([True,False],[2,3])]]
 
 replaceZero :: Pair -> [Bool] -> Pair
 replaceZero (Pair (VPair _) r) [False]    = Pair (VNum 0) r
