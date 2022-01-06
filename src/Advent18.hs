@@ -193,6 +193,16 @@ instance Show Val  where
   show (VNum  i) = show i
   show (VPair p) = show p
 
+-- | Testing day18b
+-- >>> day18b testInput
+-- 3993
+
+day18b :: String -> Int
+day18b = maximum . map (magnitude . uncurry addReduce) . crossProduct . parseInput
+
+crossProduct :: Eq a => [a] -> [(a, a)]
+crossProduct l = filter (uncurry (/=)) [(a,b)|a<-l, b<-l]
+
 
 -- | Testing day18
 -- >>> day18 testInput
