@@ -419,25 +419,33 @@ import Debug.Trace (traceShow)
 -- >>> day19 testInput
 -- 79
 
+-- | Testing day19b
+-- >>> day19b testInput
+-- 3621
+
 type Coord = (Int,Int,Int)
 type Mat   = (Int,Int,Int,Int,Int,Int,Int,Int,Int)
 
-day19 :: String -> Int
-day19 = Set.size . beacons . unify . map (map (Set.fromList &&& gaps) . orientations . snd) . parseInput
+day19b :: String -> Int
+day19b = maximum . Set.map manhattan . (\s -> Set.cartesianProduct s s) . Set.fromList . snd . unify [(0,0,0)] . map (map (Set.fromList &&& gaps) . orientations . snd) . parseInput
 
-beacons :: (Set Coord, Set Coord) -> Set Coord
-beacons = fst
+manhattan :: Num a => ((a, a, a), (a, a, a)) -> a
+manhattan ((ax,ay,az),(bx,by,bz)) = abs (ax-bx) + abs (ay-by) + abs (az-bz)
+
+day19 :: String -> Int
+day19 = Set.size . fst . fst . unify [(0,0,0)] . map (map (Set.fromList &&& gaps) . orientations . snd) . parseInput
 
 sortWith :: Ord c => (a -> b) -> (b -> c) -> [a] -> [(a,b)]
 sortWith f g = sortOn (Down . (g . snd)) . map (id &&& f)
 
-unify :: [[(Set Coord, Set Coord)]] -> (Set Coord, Set Coord)
-unify []    = error "must have at least one beacon"
-unify [h]   = head h
-unify (h:t) | z >= 12   = unify $ [b] : map (map fst) t'
-            | otherwise = unify $ h   : map (map fst) t'
+unify :: [Coord] -> [[(Set Coord, Set Coord)]] -> ((Set Coord, Set Coord), [Coord])
+unify _  []                = error "must have at least one beacon"
+unify ds [h]               = (head h, ds)
+unify ds (h:t) | z >= 12   = unify (d:ds) $ [b] : map (map fst) t'
+               | otherwise = error "not enough overlap"
   where
-  (b,z) = mergeBeacons (head h) (fst h')
+  mb :: ((Set Coord, Set Coord), Int, Coord)
+  mb@(b,z,d) = mergeBeacons (head h) (fst h')
   c :: Set Coord
   s :: Set Coord
   (c,s) = head h
@@ -448,8 +456,8 @@ unify (h:t) | z >= 12   = unify $ [b] : map (map fst) t'
   m :: [[((Set Coord, Set Coord), Int)]]
   m = map (sortWith (Set.size . Set.intersection s . snd) id) t
 
-mergeBeacons :: (Set Coord, Set Coord) -> (Set Coord, Set Coord) -> ((Set Coord, Set Coord), Int)
-mergeBeacons (ac,as) (bc,bs) = ((ac <> Set.map (addP d) bc, as <> bs), n)
+mergeBeacons :: (Set Coord, Set Coord) -> (Set Coord, Set Coord) -> ((Set Coord, Set Coord), Int, Coord)
+mergeBeacons (ac,as) (bc,bs) = ((ac <> Set.map (addP d) bc, as <> bs), n, d)
   where
   ds    = Map.intersectionWith (\(a,_) (b,_) -> gapMap b a) (gapsMap ac) (gapsMap bc)
   es    = Map.elems ds
@@ -457,7 +465,7 @@ mergeBeacons (ac,as) (bc,bs) = ((ac <> Set.map (addP d) bc, as <> bs), n)
 
 -- | Testing mergeBeacons
 -- >>> let a = [(0,0,0),(1,1,1)] in let b = [(1,1,1),(2,2,2)] in mergeBeacons (Set.fromList a, gaps a) (Set.fromList b, gaps b)
--- ((fromList [(0,0,0),(1,1,1)],fromList [(-1,-1,-1),(1,1,1)]),2)
+-- ((fromList [(0,0,0),(1,1,1)],fromList [(-1,-1,-1),(1,1,1)]),2,(-1,-1,-1))
 
 gapsMap :: (Ord k, Num k) => Set (k, k, k) -> Map.Map (k,k,k) ((k,k,k), (k,k,k))
 gapsMap cs = Map.fromList $ map (uncurry gapMap &&& id) $ filter (uncurry (/=)) $ Set.toList $ Set.cartesianProduct cs cs
