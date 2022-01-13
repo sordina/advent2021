@@ -9,7 +9,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
-
+{-# LANGUAGE DerivingStrategies #-}
 
 module Advent20 where
 
@@ -122,6 +122,14 @@ Truly incredible - now the small details are really starting to come through. Af
 
 Start with the original input image and apply the image enhancement algorithm twice, being careful to account for the infinite size of the images. How many pixels are lit in the resulting image?
 
+--- Part Two ---
+
+You still can't quite make out the details in the image. Maybe you just didn't enhance it enough.
+
+If you enhance the starting input image in the above example a total of 50 times, 3351 pixels are lit in the final output image.
+
+Start again with the original input image and apply the image enhancement algorithm 50 times. How many pixels are lit in the resulting image?
+
 -}
 
 import Text.RawString.QQ (r)
@@ -135,7 +143,7 @@ import Data.List (findIndex, elemIndex)
 import Numeric (readInt)
 import GHC.Generics (Generic)
 import Data.Generics.Product ()
-import Control.Lens ((%~), (&), (.~), (^~))
+import Control.Lens ((%~), (&), (.~), (^~), (^.))
 import Data.Generics.Labels ()
 
 data MapWithBoundary k v = MapB
@@ -152,8 +160,8 @@ resize l h m = m & #boundary %~ (l***h)
 grow2d :: (Ord k, Enum k) => MapWithBoundary (k,k) v -> MapWithBoundary (k,k) v
 grow2d = resize (pred***pred) (succ***succ)
 
-swapOutside :: MapWithBoundary k Bool -> MapWithBoundary k Bool
-swapOutside m = m & #outside %~ not
+setOutside :: Bool -> MapWithBoundary k Bool -> MapWithBoundary k Bool
+setOutside b m = m & #outside .~ b
 
 around :: (Enum k, Ord k) => (k,k) -> MapWithBoundary (k,k) v -> [v]
 around (x,y) m = [lookupB m (x', y') | y' <- [pred y .. succ y], x' <- [pred x .. succ x]]
@@ -161,6 +169,23 @@ around (x,y) m = [lookupB m (x', y') | y' <- [pred y .. succ y], x' <- [pred x .
 lookupB :: (Ord k) => MapWithBoundary k v -> k -> v
 lookupB m k = fromMaybe (outside m) (M.lookup k (explicit m))
 
+mapFromKeys :: (Ord k, Enum k) => ((k,k) -> v) -> MapWithBoundary (k,k) v -> MapWithBoundary (k,k) v 
+mapFromKeys f m = MapB b (outside m) $ M.fromList [((x,y), f (x,y)) |y<-[yl..yh], x<-[xl..xh]]
+  where
+  b@((xl,yl),(xh,yh)) = boundary m'
+  m' = grow2d m
+
+explore :: Enum k => MapWithBoundary (k,k) v -> ((k,k),(k,k))
+explore = (!!10) . iterate ((pred***pred) *** (succ***succ)) . boundary
+
+type World = MapWithBoundary (Int,Int) Bool
+
+-- | Testing day20b
+-- >>> day20b testInput
+-- 3351
+
+day20b :: String -> Int
+day20b = length . lights . snd . (!!50) . iterate enhance . parseInput
 
 -- | Testing day20
 -- >>> day20 testInput
@@ -169,28 +194,15 @@ lookupB m k = fromMaybe (outside m) (M.lookup k (explicit m))
 day20 :: String -> Int
 day20 = length . lights . snd . (!!2) . iterate enhance . parseInput
 
-lights :: M.Map (Int,Int) Bool -> [Bool]
-lights = filter id . M.elems
+lights :: World -> [Bool]
+lights m | outside m = error "Infinite lights"
+         | otherwise = filter id $ M.elems $ explicit m
 
-enhance :: (A.Array Int Bool, M.Map (Int,Int) Bool) -> (A.Array Int Bool, M.Map (Int,Int) Bool)
-enhance (a,i) = (a, M.mapWithKey (enhanceAt a i) (grow i))
+enhance :: (A.Array Int Bool, World) -> (A.Array Int Bool, World)
+enhance (a,i) = (a, setOutside (enhanceAt a i (snd $ explore i)) $ mapFromKeys (enhanceAt a i) i)
 
-grow :: M.Map (Int,Int) Bool -> M.Map (Int,Int) Bool
-grow m = m <> M.fromList (n ++ o ++ p ++ q)
-  where
-    n       = [ ((pred xl, y), False) | y <- [pred yl .. succ yh] ]
-    o       = [ ((succ xh, y), False) | y <- [pred yl .. succ yh] ]
-    p       = [ ((x, pred yl), False) | x <- [pred xl .. succ xh] ]
-    q       = [ ((x, succ yh), False) | x <- [pred xl .. succ xh] ]
-    ks      = M.keys m
-    (xl,xh) = (minimum &&& maximum) $ map fst ks
-    (yl,yh) = (minimum &&& maximum) $ map snd ks
-
-enhanceAt :: A.Array Int Bool -> M.Map (Int, Int) Bool -> (Int, Int) -> a -> Bool
-enhanceAt a i (x,y) _b = a A.! ix
-  where
-  ix = bs2ds $ map (fromMaybe False . flip M.lookup i) cs
-  cs = [(x',y') | y' <- [pred y..succ y], x' <- [pred x..succ x]]
+enhanceAt :: A.Array Int Bool -> World -> (Int, Int) -> Bool
+enhanceAt a i k = a A.! bs2ds (around k i)
 
 -- >>> map (bool 'f' 't') (map (== '#') "...#...#.")
 -- "ffftffftf"
@@ -208,16 +220,21 @@ indexOf s c = fromMaybe (error "indexOf couldn't find index") $ elemIndex c s
 
 -- | Testing parseInput
 -- >>> parseInput testInputSmall
--- (array (0,17) [(0,False),(1,False),(2,True),(3,False),(4,True),(5,False),(6,False),(7,True),(8,True),(9,True),(10,True),(11,True),(12,False),(13,True),(14,False),(15,True),(16,False),(17,True)],fromList [((0,0),True),((1,0),False),((2,0),False),((3,0),True),((4,0),False)])
+-- (array (0,17) [(0,False),(1,False),(2,True),(3,False),(4,True),(5,False),(6,False),(7,True),(8,True),(9,True),(10,True),(11,True),(12,False),(13,True),(14,False),(15,True),(16,False),(17,True)],MapB {boundary = ((0,0),(4,0)), outside = False, explicit = fromList [((0,0),True),((1,0),False),((2,0),False),((3,0),True),((4,0),False)]})
 
-parseInput :: String -> (A.Array Int Bool, M.Map (Int,Int) Bool)
+parseInput :: String -> (A.Array Int Bool, World)
 parseInput = (array . map (== '#') . head &&& image . tail . tail) . lines
 
 array :: [e] -> A.Array Int e
 array xs = A.listArray (0, pred (length xs)) xs
 
-image :: [String] -> M.Map (Int,Int) Bool
-image = parseGrid' (== '#') . unlines
+image :: [String] -> World
+image s = MapB ((xl,yl),(xh,yh)) False m
+  where 
+  m       = parseGrid' (== '#') $ unlines s
+  ks      = M.keys m
+  (xl,xh) = (minimum &&& maximum) $ map fst ks
+  (yl,yh) = (minimum &&& maximum) $ map snd ks
 
 testInput :: String
 testInput = unlines $ tail $ lines [r|
