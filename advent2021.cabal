@@ -32,6 +32,7 @@ executable advent2021
     Advent17
     Advent18
     Advent19
+    Advent20
 
   hs-source-dirs:      src
 
@@ -69,4 +70,5 @@ executable advent2021
     parallel,
     search-algorithms,
     unordered-containers,
-    megaparsec
+    megaparsec,
+    generic-lens

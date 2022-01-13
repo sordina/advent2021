@@ -13,10 +13,13 @@ fixEq f x
   y = f x
 
 parseGrid :: String -> Map.Map (Int,Int) Int
-parseGrid s = Map.fromList cs
+parseGrid = parseGrid' (read . pure)
+
+parseGrid' :: (Char -> b) -> String -> Map.Map (Int,Int) b
+parseGrid' f s = Map.fromList cs
   where
   ls = lines s
-  cs = concat $ zipWith (\ y l -> zipWith (\ x c -> ((x, y), read [c])) [0 .. ] l) [0..] ls
+  cs = concat $ zipWith (\ y l -> zipWith (\ x c -> ((x, y), f c)) [0 .. ] l) [0..] ls
 
 -- >>> crossProductZero (2,3)
 -- [(0,0),(0,1),(0,2),(0,3),(1,0),(1,1),(1,2),(1,3),(2,0),(2,1),(2,2),(2,3)]
