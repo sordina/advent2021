@@ -5,6 +5,10 @@ module Utils where
 import qualified Data.Map as Map
 import Control.Monad (liftM2)
 
+newtype ShowString = Show String
+
+instance Show ShowString where show (Show s) = s
+
 fixEq :: Eq t => (t -> t) -> t -> t
 fixEq f x
   | x == y = x
