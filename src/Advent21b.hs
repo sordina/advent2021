@@ -12,7 +12,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TupleSections #-}
 
-module Advent21x where
+module Advent21b where
 
 import Text.RawString.QQ (r)
 import Control.Arrow ((&&&))
@@ -42,8 +42,8 @@ import Data.MemoCombinators
 -- >>> p1Roll 3 $ parseInput testInput
 -- (990,207)
 
-day21x :: String -> Int
-day21x = uncurry max . p1Roll 21 . parseInput
+day21b :: String -> Int
+day21b = uncurry max . p1Roll 21 . parseInput
 
 type Player    = (Int    {- Score     -}, Int    {- Position  -})
 type Game      = (Player {- P1 Player -}, Player {- P2 Player -})
