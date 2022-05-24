@@ -62,7 +62,7 @@ p1Roll' t p1Roll' g = immediateWins <<>> deferredWins
       d2 <- roll
       d3 <- roll
       let
-        p = mod10 $ d1 + d2 + d3 + (g ^. _1 . _2)
+        p = modN 10 $ d1 + d2 + d3 + (g ^. _1 . _2)
         s = p + (g ^. _1 . _1)
       pure $ g & _1 .~ (s,p)
 
@@ -71,8 +71,8 @@ p2Roll' p1Roll' = swap . p1Roll' . swap
 
 -- Helpers
 
-mod10 :: Integral a => a -> a
-mod10 n = succ $ pred n `mod` 10
+modN :: Integral a => a -> a -> a
+modN m n = succ $ pred n `mod` m
 
 gconcat :: [Wins] -> Wins
 gconcat = foldl' (<<>>) (0,0)
