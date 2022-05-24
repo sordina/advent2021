@@ -19,18 +19,28 @@ import Data.MemoCombinators ( integral, pair, Memo )
 -- >>> day21b testInput
 -- 444356092776315
 
+-- | Testing parseInput
+-- >>> parseInput testInput
+-- ((0,4),(0,8))
+
 -- | Confirming non-memoized results
--- >>> p1Roll 0 $ parseInput testInput
+-- >>> start 0 $ parseInput testInput
 -- (27,0)
--- >>> p1Roll 1 $ parseInput testInput
+-- >>> start 1 $ parseInput testInput
 -- (27,0)
--- >>> p1Roll 2 $ parseInput testInput
+-- >>> start 2 $ parseInput testInput
 -- (183,156)
--- >>> p1Roll 3 $ parseInput testInput
+-- >>> start 3 $ parseInput testInput
 -- (990,207)
 
+testInput :: String
+testInput = unlines $ tail $ lines [r|
+Player 1 starting position: 4
+Player 2 starting position: 8
+|]
+
 day21b :: String -> Int
-day21b = uncurry max . p1Roll threshold . parseInput
+day21b = uncurry max . start threshold . parseInput
 
 type Player    = (Int    {- Score     -}, Int    {- Position  -})
 type Game      = (Player {- P1 Player -}, Player {- P2 Player -})
@@ -44,13 +54,13 @@ parseInput i = (parseLine "1" (head ls), parseLine "2" (ls !! 1))
   parseLine n (a:b:c:d:e:_) | n == b = (0, read e)
   parseLine _ ws = error $ "can't parse line: " <> unwords ws
 
-p1Roll :: Threshold -> Game -> Wins
-p1Roll t = fix (gamo . p1Roll' t)
+start :: Threshold -> Game -> Wins
+start t = fix (gamo . p1Roll t)
 
-p1Roll' :: Threshold -> (Game -> Wins) -> Game -> Wins
-p1Roll' t p1Roll' g = immediateWins <<>> deferredWins
+p1Roll :: Threshold -> (Game -> Wins) -> Game -> Wins
+p1Roll t p1Roll g = immediateWins <<>> deferredWins
   where
-    deferredWins = gconcat $ map (p2Roll' p1Roll') r
+    deferredWins = gconcat $ map (p2Roll p1Roll) r
     immediateWins = (length w, 0)
     (w, r) = partition ((>= t) . view (_1._1)) games
     games = do
@@ -62,8 +72,8 @@ p1Roll' t p1Roll' g = immediateWins <<>> deferredWins
         s = p + (g ^. _1 . _1)
       pure $ g & _1 .~ (s,p)
 
-p2Roll' :: (Game -> Wins) -> Game -> Wins
-p2Roll' p1Roll' = swap . p1Roll' . swap
+p2Roll :: (Game -> Wins) -> Game -> Wins
+p2Roll p1Roll = swap . p1Roll . swap
 
 -- Helpers
 
@@ -86,14 +96,3 @@ roll = [1,2,3]
 
 mod10 :: Integral a => a -> a
 mod10 n = succ $ pred n `mod` 10
-
-
--- | Testing parseInput
--- >>> parseInput testInput
--- ((0,4),(0,8))
-
-testInput :: String
-testInput = unlines $ tail $ lines [r|
-Player 1 starting position: 4
-Player 2 starting position: 8
-|]
