@@ -9,7 +9,6 @@ import Control.Arrow ((&&&))
 import Control.Lens (_1,_2, (^.), (&), (.~), view)
 import Debug.Trace (traceShow)
 import Data.Tree ( Tree(Node), unfoldForest, drawForest )
-import Utils (ShowString(Show))
 import Data.Foldable (foldl')
 import Data.List (partition)
 import Data.Tuple (swap)
@@ -31,7 +30,7 @@ import Data.MemoCombinators ( integral, pair, Memo )
 -- (990,207)
 
 day21b :: String -> Int
-day21b = uncurry max . p1Roll 21 . parseInput
+day21b = uncurry max . p1Roll threshold . parseInput
 
 type Player    = (Int    {- Score     -}, Int    {- Position  -})
 type Game      = (Player {- P1 Player -}, Player {- P2 Player -})
@@ -39,14 +38,11 @@ type Wins      = (Int    {- P1 Wins   -}, Int    {- P2 Wins   -})
 type Threshold = Int
 
 parseInput :: String -> Game
-parseInput i = (parseLine "1" (ls !! 0), parseLine "2" (ls !! 1))
+parseInput i = (parseLine "1" (head ls), parseLine "2" (ls !! 1))
   where
   ls = map words $ lines i
   parseLine n (a:b:c:d:e:_) | n == b = (0, read e)
   parseLine _ ws = error $ "can't parse line: " <> unwords ws
-
-roll :: [Int]
-roll = [1,2,3]
 
 p1Roll :: Threshold -> Game -> Wins
 p1Roll t = fix (gamo . p1Roll' t)
@@ -62,7 +58,7 @@ p1Roll' t p1Roll' g = immediateWins <<>> deferredWins
       d2 <- roll
       d3 <- roll
       let
-        p = modN 10 $ d1 + d2 + d3 + (g ^. _1 . _2)
+        p = mod10 $ d1 + d2 + d3 + (g ^. _1 . _2)
         s = p + (g ^. _1 . _1)
       pure $ g & _1 .~ (s,p)
 
@@ -70,9 +66,6 @@ p2Roll' :: (Game -> Wins) -> Game -> Wins
 p2Roll' p1Roll' = swap . p1Roll' . swap
 
 -- Helpers
-
-modN :: Integral a => a -> a -> a
-modN m n = succ $ pred n `mod` m
 
 gconcat :: [Wins] -> Wins
 gconcat = foldl' (<<>>) (0,0)
@@ -82,6 +75,18 @@ gconcat = foldl' (<<>>) (0,0)
 
 gamo :: Memo Game
 gamo = let p = pair integral integral in pair p p
+
+-- Constants
+
+threshold :: Threshold
+threshold = 21
+
+roll :: [Int]
+roll = [1,2,3]
+
+mod10 :: Integral a => a -> a
+mod10 n = succ $ pred n `mod` 10
+
 
 -- | Testing parseInput
 -- >>> parseInput testInput
