@@ -1,24 +1,12 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE NegativeLiterals #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TupleSections #-}
 
 module Advent21b where
 
 import Text.RawString.QQ (r)
 import Control.Arrow ((&&&))
-import Data.List.Split (chunksOf)
-import Control.Monad.State (runState, State, MonadState (get, put), gets, evalState)
-import Control.Lens (Zoom(zoom), _1,_2,_3,_4, (%=), (+=), (<%=), (^.), (&), (.~), view)
+import Control.Lens (_1,_2, (^.), (&), (.~), view)
 import Debug.Trace (traceShow)
 import Data.Tree ( Tree(Node), unfoldForest, drawForest )
 import Utils (ShowString(Show))
@@ -26,10 +14,10 @@ import Data.Foldable (foldl')
 import Data.List (partition)
 import Data.Tuple (swap)
 import Data.Function (fix)
-import Data.MemoCombinators
+import Data.MemoCombinators ( integral, pair, Memo )
 
 -- | Testing day21x
--- >>> day21x testInput
+-- >>> day21b testInput
 -- 444356092776315
 
 -- | Confirming non-memoized results
