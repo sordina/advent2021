@@ -7,8 +7,6 @@ module Advent21b where
 import Text.RawString.QQ (r)
 import Control.Arrow ((&&&))
 import Control.Lens (_1,_2, (^.), (&), (.~), view)
-import Debug.Trace (traceShow)
-import Data.Tree ( Tree(Node), unfoldForest, drawForest )
 import Data.Foldable (foldl')
 import Data.List (partition)
 import Data.Tuple (swap)
@@ -55,7 +53,7 @@ parseInput i = (parseLine "1" (head ls), parseLine "2" (ls !! 1))
   parseLine _ ws = error $ "can't parse line: " <> unwords ws
 
 start :: Threshold -> Game -> Wins
-start t = fix (gamo . p1Roll t)
+start t = fix (memoGame . p1Roll t)
 
 p1Roll :: Threshold -> (Game -> Wins) -> Game -> Wins
 p1Roll t p1Roll g = immediateWins <<>> deferredWins
@@ -83,8 +81,8 @@ gconcat = foldl' (<<>>) (0,0)
 (<<>>) :: Wins -> Wins -> Wins
 (w1,w2) <<>> (x1,x2) = (w1+x1, w2+x2)
 
-gamo :: Memo Game
-gamo = let p = pair integral integral in pair p p
+memoGame :: Memo Game
+memoGame = let p = pair integral integral in pair p p
 
 -- Constants
 
