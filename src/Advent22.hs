@@ -107,32 +107,29 @@ Starting again with all cubes off, execute all reboot steps. Afterward, consider
 -}
 
 import Text.RawString.QQ (r)
-import Data.List.Split ( splitOn )
+import Data.List.Split (splitOn)
 import Control.Arrow ((&&&))
 import Data.Monoid (Last (Last, getLast), Sum (getSum))
 import Data.Maybe (mapMaybe, fromMaybe)
 import Data.List (foldl')
 import Data.Foldable (fold)
-import Data.Set qualified as Set
 import Data.Bool (bool)
 
+import Data.Set qualified as Set
+
 -- | Testing day22b
--- >>> day22b testInput3
--- 0
+-- >>> day22b testInput
+
+-- Should be 2758514936282235
+
 
 -- 3d cube aliases:
 type Interval = (Int,Int)
 type Cuboid = (Interval,Interval,Interval)
 
--- | Typeclass to represent addition and subtraction of n-d cuboids.
---   This may subdivide regions more than is nececarry but this could
---   be resolved by adding a "unify" step following combinatorial operations.
-class Geometry g where
-    (</>) :: g -> g -> Set.Set g -- ^ Slice - Slice region accordingly
-
 -- | ...
 -- 
--- Instance for 1-d "cuboids"
+-- For 1-d "cuboids"
 -- This forms the basis for all other cuboids since additional dimensions should
 -- be able to be added orthoganally (no pun intended).
 -- 
@@ -157,31 +154,66 @@ class Geometry g where
 -- ----- ------  (6)
 -- 
 -- ...
-instance Geometry Interval where
-    x@(a,b) </> y@(c,d)
-        | b <= c                  {- (1) -} = nonZeroSpans [x]
-        | a < c && b > c && b < d {- (2) -} = nonZeroSpans [(a,c),(c,b)]
-        | a <= c && b >= d        {- (3) -} = nonZeroSpans [(a,c),(c,d),(d,b)]
-        | a >= c && b <= d        {- (4) -} = nonZeroSpans [x]
-        | a > c && a < d && b > d {- (5) -} = nonZeroSpans [(a,d),(d,b)]
-        | a >= d                  {- (6) -} = nonZeroSpans [x]
-        | otherwise = error "partial <->"
 
-instance Geometry Cuboid where
-    (a,b,c) </> (d,e,f) = Set.fromList do
-        g <- Set.toList $ a </> d
-        h <- Set.toList $ b </> e
-        i <- Set.toList $ c </> f
-        pure (g,h,i)
+cuts1d :: Interval -> Interval -> Set.Set Int
+cuts1d (a,b) (c,d) = Set.fromList [a,b,c,d]
 
-nonZeroSpans :: [Interval] -> Set.Set Interval
-nonZeroSpans = Set.fromList . filter (not . uncurry (==))
+-- | Testing cuts1d
+-- >>> map (cuts1d (1,3)) [(4,5),(3,5),(2,4),(0,1)]
+-- [fromList [1,3,4,5],fromList [1,3,5],fromList [1,2,3,4],fromList [0,1,3]]
 
-toggle :: Cuboid -> (Bool, Cuboid) -> Set.Set Cuboid
-toggle s (b,c) = bool (x Set.\\ y) (Set.union x y) b
+split1d :: Interval -> Int -> Set.Set Interval
+split1d x@(a,b) i
+    | i <= a = Set.fromList [x]
+    | i > a && i < b = Set.fromList [(a,i),(i,b)]
+    | i >= b = Set.fromList [x]
+    | otherwise = error "partial split1d"
+
+-- | Testing split1d
+-- >>> map (split1d (1,3)) [0,1,2,3,4]
+-- [fromList [(1,3)],fromList [(1,3)],fromList [(1,2),(2,3)],fromList [(1,3)],fromList [(1,3)]]
+
+cut3d :: Cuboid -> Cuboid -> Set.Set (Int,Int,Int)
+cut3d (a,b,c) (d,e,f) = Set.fromList do
+    x <- Set.toList $ cuts1d a d
+    y <- Set.toList $ cuts1d b e
+    z <- Set.toList $ cuts1d c f
+    pure (x,y,z)
+
+-- | Testing cut3d
+-- >>> map (cut3d ((1,3),(1,3),(1,3))) [((3,4),(3,4),(3,4))]
+-- [fromList [(1,1,1),(1,1,3),(1,1,4),(1,3,1),(1,3,3),(1,3,4),(1,4,1),(1,4,3),(1,4,4),(3,1,1),(3,1,3),(3,1,4),(3,3,1),(3,3,3),(3,3,4),(3,4,1),(3,4,3),(3,4,4),(4,1,1),(4,1,3),(4,1,4),(4,3,1),(4,3,3),(4,3,4),(4,4,1),(4,4,3),(4,4,4)]]
+
+cuts3d :: Set.Set Cuboid -> Cuboid -> Set.Set (Int,Int,Int)
+cuts3d s c = Set.unions $ Set.map (cut3d c) s
+
+split3d :: Cuboid -> (Int,Int,Int) -> Set.Set Cuboid
+split3d (a,b,c) (d,e,f) = Set.fromList do
+    x <- Set.toList $ split1d a d
+    y <- Set.toList $ split1d b e
+    z <- Set.toList $ split1d c f
+    pure (x,y,z)
+
+splits3d :: Set.Set Cuboid -> Set.Set (Int,Int,Int) -> Set.Set Cuboid
+splits3d = Set.foldl' (\m n -> Set.unions $ Set.map (`split3d` n) m)
+
+volume :: Cuboid -> Int
+volume ((a,b),(c,d),(e,f)) = (b-a)*(d-c)*(f-e)
+
+toggles :: Set.Set Cuboid -> (Bool, Cuboid) -> Set.Set Cuboid
+toggles s (b,c) = bool (d Set.\\ e) (Set.union d e) b
     where
-    x = s </> c
-    y = c </> s
+    t = cuts3d s c
+    d = splits3d s t
+    e = splits3d (Set.singleton c) t
+
+-- | Just for testing
+toggle :: Cuboid -> (Bool, Cuboid) -> Set.Set Cuboid -- TODO: This may be too low level.
+toggle s (b,c) = bool (d Set.\\ e) (Set.union d e) b
+    where
+    t = cut3d s c
+    d = splits3d (Set.singleton s) t
+    e = splits3d (Set.singleton c) t
 
 -- | Test `on` idempotency
 -- >>> toggle ((0,1),(0,1),(0,1)) (True,((0,1),(0,1),(0,1)))
@@ -199,15 +231,20 @@ toggle s (b,c) = bool (x Set.\\ y) (Set.union x y) b
 -- >>> toggle ((0,2),(0,2),(0,2)) (True,((1,3),(1,3),(1,3)))
 -- fromList [((0,1),(0,1),(0,1)),((0,1),(0,1),(1,2)),((0,1),(1,2),(0,1)),((0,1),(1,2),(1,2)),((1,2),(0,1),(0,1)),((1,2),(0,1),(1,2)),((1,2),(1,2),(0,1)),((1,2),(1,2),(1,2)),((1,2),(1,2),(2,3)),((1,2),(2,3),(1,2)),((1,2),(2,3),(2,3)),((2,3),(1,2),(1,2)),((2,3),(1,2),(2,3)),((2,3),(2,3),(1,2)),((2,3),(2,3),(2,3))]
 
+-- | Test `off` elimination
+-- >>> toggle ((0,1),(0,1),(0,1)) (False,((0,1),(0,1),(0,1)))
+-- fromList []
+
+-- | Test `off` preservation
+-- >>> toggle ((0,1),(0,1),(0,1)) (False,((1,2),(1,2),(1,2)))
+-- fromList [((0,1),(0,1),(0,1))]
+
+-- | Test `off` subtraction
+-- >>> toggle ((0,1),(0,1),(0,2)) (False,((0,1),(0,1),(1,2)))
+-- fromList [((0,1),(0,1),(0,1))]
 
 day22b :: String -> Int
 day22b = sum . map volume . Set.toList . foldl' toggles Set.empty . parseInput
-    where
-    toggles :: Set.Set Cuboid -> (Bool, Cuboid) -> Set.Set Cuboid
-    toggles s c = Set.unions $ Set.map (`toggle` c) s
-
-    volume :: Cuboid -> Int
-    volume ((a,b),(c,d),(e,f)) = (b-a)*(d-c)*(f-e)
 
 -- | Testing day22
 -- >>> day22 testInput
@@ -293,7 +330,7 @@ on x=-54112..-39298,y=-85059..-49293,z=-27449..7877
 on x=967..23432,y=45373..81175,z=27513..53682
 |]
 
-testInput3 :: String 
+testInput3 :: String
 testInput3 = unlines $ tail $ lines [r|
 on x=-5..47,y=-31..22,z=-19..33
 on x=-44..5,y=-27..21,z=-14..35
