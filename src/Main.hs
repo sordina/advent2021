@@ -1,6 +1,5 @@
 module Main where
 
-import           Control.Arrow      (Arrow ((&&&)))
 import           Data.List          (intercalate)
 import           Data.Maybe         (fromMaybe)
 import           System.Environment (getArgs)

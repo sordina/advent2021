@@ -1,8 +1,5 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
@@ -16,13 +13,15 @@ module Advent22BCuboids where
 
 import Data.Set qualified as Set
 import Data.Tuple (swap)
-import Control.Monad
+import Control.Monad ( zipWithM )
 import Control.Arrow ((&&&))
 
+{- Addition isn't actually required! Wow!
 (+~) :: Cuboid -> Cuboid -> Set.Set Cuboid
 a +~ b = case compositeCuboids a b of
     Nothing    -> Set.fromList [a,b]
     Just (s,t) -> Set.union s t
+-}
 
 (-~) :: Cuboid -> Cuboid -> Set.Set Cuboid
 a -~ b = case compositeCuboids a b of
@@ -40,16 +39,6 @@ a -~ b = case compositeCuboids a b of
 -- 8
 volume :: Cuboid -> Int
 volume (Cuboid rs) = product $ map (succ . uncurry (-) . swap) rs
-
--- | Finds the intersection of two N-dimensional voxel coordinate cuboids
--- >>> intersectCuboids (Cuboid [(1,3)]) (Cuboid [(2,4)]) -- Linear overlap 1d
--- >>> intersectCuboids (Cuboid [(1,3),(1,3)]) (Cuboid [(2,4),(4,9)]) -- Independent on one dimension 2d
--- >>> intersectCuboids (Cuboid [(1,3),(1,3)]) (Cuboid [(2,4),(2,9)]) -- Corners overlapping 2d
--- >>> intersectCuboids (Cuboid [(1,3),(1,3),(1,2)]) (Cuboid [(2,2),(2,2),(0,4)]) -- Skewered 3d
--- >>> intersectCuboids (Cuboid [(0,3),(0,3),(0,3)]) (Cuboid [(2,4),(2,4),(2,4)]) -- Corners overlapping 3d
--- >>> intersectCuboids (Cuboid [(0,3),(0,3),(0,3)]) (Cuboid [(2,4),(2,4),(4,5)]) -- Independent on one dimension 3d
-intersectCuboids :: Cuboid -> Cuboid -> Maybe Cuboid
-intersectCuboids (Cuboid rs1) (Cuboid rs2) = Cuboid <$> zipWithM intersectR rs1 rs2
 
 -- | The regions represented by sub-cuboids that belong to cube A and cube B
 --   the intersecting region is part of both sets.
@@ -84,6 +73,25 @@ significant a b
     | a < b = Just (a,b)
     | otherwise = Nothing
 
+-- Argument is the range in each dimension
+newtype Cuboid = Cuboid [P2]
+    deriving (Eq, Ord, Show)
+
+type P2 = (Int,Int)
+
+
+{- These are cool routines, but we need more information than the simple intersection
+-- 
+-- | Finds the intersection of two N-dimensional voxel coordinate cuboids
+-- >>> intersectCuboids (Cuboid [(1,3)]) (Cuboid [(2,4)]) -- Linear overlap 1d
+-- >>> intersectCuboids (Cuboid [(1,3),(1,3)]) (Cuboid [(2,4),(4,9)]) -- Independent on one dimension 2d
+-- >>> intersectCuboids (Cuboid [(1,3),(1,3)]) (Cuboid [(2,4),(2,9)]) -- Corners overlapping 2d
+-- >>> intersectCuboids (Cuboid [(1,3),(1,3),(1,2)]) (Cuboid [(2,2),(2,2),(0,4)]) -- Skewered 3d
+-- >>> intersectCuboids (Cuboid [(0,3),(0,3),(0,3)]) (Cuboid [(2,4),(2,4),(2,4)]) -- Corners overlapping 3d
+-- >>> intersectCuboids (Cuboid [(0,3),(0,3),(0,3)]) (Cuboid [(2,4),(2,4),(4,5)]) -- Independent on one dimension 3d
+intersectCuboids :: Cuboid -> Cuboid -> Maybe Cuboid
+intersectCuboids (Cuboid rs1) (Cuboid rs2) = Cuboid <$> zipWithM intersectR rs1 rs2
+
 -- Nothing represents non-intersection
 intersectR :: P2 -> P2 -> Maybe P2
 intersectR (a1,a2) (b1,b2)
@@ -92,9 +100,4 @@ intersectR (a1,a2) (b1,b2)
     | a1 >= b1 && a2 <= b2 = Just (a1,a2) -- a inside b
     | b1 >= a1 && b2 <= a2 = Just (b1,b2) -- b inside a
     | otherwise = Nothing -- independent
-
--- Argument is the range in each dimension
-newtype Cuboid = Cuboid [P2]
-    deriving (Eq, Ord, Show)
-
-type P2 = (Int,Int)
+-}
