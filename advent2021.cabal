@@ -36,6 +36,8 @@ executable advent2021
     Advent21
     Advent21b
     Advent22
+    Advent22b
+    Advent22BCuboids
 
   hs-source-dirs:      src
 
@@ -43,6 +45,7 @@ executable advent2021
 
   ghc-options:
     "-O3"
+    "-Wall"
     "-threaded"
     "-with-rtsopts=-N"
 
@@ -55,7 +58,7 @@ executable advent2021
     QuasiQuotes
 
   build-depends:
-    base >=4.14 && <4.15,
+    base >=4.14 && <5.15,
     containers,
     lens-regex-pcre,
     text,

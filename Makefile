@@ -2,8 +2,12 @@
 objects := $(shell ls src/ | sed 's/hs/o/' | grep Advent | grep -v b | xargs echo)
 
 .PHONY: all
-all:
+all: build
 	cabal exec -- make every
+
+.PHONY: build
+build:
+	cabal build
 
 .PHONY: every
 every: $(objects)
@@ -12,6 +16,7 @@ every: $(objects)
 doctest-interactive:
 	find {src,*.cabal} | entr -- cabal exec -- doctest -fdefer-typed-holes -isrc src/*.hs
 
+.PHONY: %.o
 %.o: src/%.hs
 	$(eval x = $(shell echo $< | sed -E 's/src.//; s/Advent(..)\.hs/\1/; s/0([0-9])/\1/g'))
 	@echo
