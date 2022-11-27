@@ -109,10 +109,9 @@ Starting again with all cubes off, execute all reboot steps. Afterward, consider
 import Text.RawString.QQ (r)
 import Data.List.Split ( splitOn )
 import Control.Arrow ((&&&))
-import Data.Monoid (Last (Last, getLast), Sum (getSum))
-import Data.Maybe (mapMaybe, fromMaybe)
+import Data.Monoid (Last (Last, getLast))
+import Data.Maybe (fromMaybe)
 import Data.List (foldl')
-import Data.Foldable (fold)
 import Data.Set qualified as Set
 import Data.Bool (bool)
 
@@ -158,7 +157,7 @@ class Geometry g where
 -- 
 -- ...
 instance Geometry Interval where
-    x@(a,b) </> y@(c,d)
+    x@(a,b) </> _y@(c,d)
         | b <= c                  {- (1) -} = nonZeroSpans [x]
         | a < c && b > c && b < d {- (2) -} = nonZeroSpans [(a,c),(c,b)]
         | a <= c && b >= d        {- (3) -} = nonZeroSpans [(a,c),(c,d),(d,b)]
@@ -229,8 +228,8 @@ p <? (l,h) = p >= l && p <= h
 day22 :: String -> Int
 day22 i = length $ filter id $ map (`tests` parsed) cs
     where
-    r = [-50..50]
-    cs = [(x,y,z) | x <- r, y <- r, z <- r]
+    r' = [-50..50]
+    cs = [(x,y,z) | x <- r', y <- r', z <- r']
     parsed = parseInput i
 
 -- Test Inputs and Parsing
