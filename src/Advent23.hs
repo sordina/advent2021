@@ -112,31 +112,46 @@ What is the least energy required to organize the amphipods?
 
 -}
 
+import Text.RawString.QQ (r)
 import Algorithm.Search (aStar)
-import Data.Set qualified as Set
+import Data.Map qualified as Map
 
 day23 :: String -> Integer
 day23 i = case aStar neighbours transitionCosts remainingCostEstimate shortestPath (parseInput i) of
     Nothing -> 0
     Just (c, _) -> c
 
-neighbours :: Chamber -> Set.Set Chamber
+neighbours :: Amphipods -> [Amphipods]
 neighbours = undefined
 
-transitionCosts :: Chamber -> Chamber -> Integer
+transitionCosts :: Amphipods -> Amphipods -> Integer
 transitionCosts = undefined
 
-remainingCostEstimate :: Chamber -> Integer
+remainingCostEstimate :: Amphipods -> Integer
 remainingCostEstimate = undefined
 
-shortestPath :: Chamber -> Bool
+shortestPath :: Amphipods -> Bool
 shortestPath = undefined
 
-parseInput :: String -> Chamber
-parseInput = undefined
+-- | Parses Input...
+-- >>> parseInput testInput
+-- Chamber {unChamber = fromList [((1,1),'.'),((2,1),'.'),((3,1),'.'),((3,2),'B'),((3,3),'A'),((4,1),'.'),((5,1),'.'),((5,2),'C'),((5,3),'D'),((6,1),'.'),((7,1),'.'),((7,2),'B'),((7,3),'C'),((8,1),'.'),((9,1),'.'),((9,2),'D'),((9,3),'A'),((10,1),'.'),((11,1),'.')]}
+parseInput :: String -> Chamber Char
+parseInput i = Chamber $ Map.filter (`notElem` "# ") $ Map.fromList $
+    zip [0..] (map (zip [0..]) (lines i))
+    >>= (\(y,l) -> map (\(x,c) -> ((x,y),c)) l)
 
-newtype Chamber  = Chamber { unChamber :: Set.Set (Location, Class) } deriving (Eq, Ord, Show)
-type    Location = (Int,Int)
-type    Class    = Char
+testInput :: String
+testInput = unlines $ tail $ lines [r|
+#############
+#...........#
+###B#C#B#D###
+  #A#D#C#A#
+  #########
+|]
 
-
+newtype Chamber x = Chamber { unChamber :: Map.Map Location x } deriving (Eq, Ord, Show)
+type    Squares   = Chamber ()
+type    Amphipods = Chamber Class
+type    Location  = (Int,Int)
+type    Class     = Char
