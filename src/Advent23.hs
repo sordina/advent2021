@@ -3,6 +3,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 module Advent23 where
 
@@ -112,26 +113,63 @@ What is the least energy required to organize the amphipods?
 
 -}
 
+import Control.Monad (void)
 import Text.RawString.QQ (r)
 import Algorithm.Search (aStar)
 import Data.Map qualified as Map
 
 day23 :: String -> Integer
-day23 i = case aStar neighbours transitionCosts remainingCostEstimate shortestPath (parseInput i) of
-    Nothing -> 0
-    Just (c, _) -> c
+day23 i = maybe 0 fst $ aStar neighbours transitionCosts remainingCostEstimate solution players
+    where
 
-neighbours :: Amphipods -> [Amphipods]
-neighbours = undefined
+    -- Function to generate list of neighboring states given the current state
+    neighbours :: Amphipods -> [Amphipods]
+    neighbours as = filter valid $ map move $ chamberToList as
+        where
+        move :: (Location, Class) -> Amphipods
+        move = undefined
 
-transitionCosts :: Amphipods -> Amphipods -> Integer
-transitionCosts = undefined
+        valid :: Amphipods -> Bool
+        valid = undefined
 
-remainingCostEstimate :: Amphipods -> Integer
-remainingCostEstimate = undefined
+    -- Function to generate transition costs between neighboring states.
+    -- This is only called for adjacent states,
+    -- so it is safe to have this function be partial for non-neighboring states.
+    -- TODO: This doesn't take into consideration the non-pausing in doorways rule.
+    transitionCosts :: Amphipods -> Amphipods -> Integer
+    transitionCosts = classMovedCost
 
-shortestPath :: Amphipods -> Bool
-shortestPath = undefined
+    -- Estimate on remaining cost given a state.
+    -- Should never underestimate the cost.
+    remainingCostEstimate :: Amphipods -> Integer
+    remainingCostEstimate = undefined
+
+    -- Predicate to determine if solution found.
+    -- aStar returns the shortest path to the first state for which this predicate returns True
+    solution :: Amphipods -> Bool
+    solution = undefined
+
+    parsed  = parseInput i
+    players = amphipods parsed
+    board   = squares parsed
+
+-- | Determine which class of amphipod moved.
+--   There may be a more efficient way to do this, but this is ok for now.
+--   Should only ever be one item moved.
+classMovedCost :: Amphipods -> Amphipods -> Integer
+classMovedCost (Chamber a) (Chamber b) = classCost $ head $ Map.elems $ Map.difference a b
+
+-- | Transforms chamber into squares
+-- >>> squares (parseInput testInput)
+-- Chamber {unChamber = fromList [((1,1),()),((2,1),()),((3,1),()),((3,2),()),((3,3),()),((4,1),()),((5,1),()),((5,2),()),((5,3),()),((6,1),()),((7,1),()),((7,2),()),((7,3),()),((8,1),()),((9,1),()),((9,2),()),((9,3),()),((10,1),()),((11,1),())]}
+squares :: Chamber Char -> Squares
+squares = void
+
+-- | Transforms chamber into amphipods
+-- >>> amphipods (parseInput testInput)
+-- Chamber {unChamber = fromList [((3,2),'B'),((3,3),'A'),((5,2),'C'),((5,3),'D'),((7,2),'B'),((7,3),'C'),((9,2),'D'),((9,3),'A')]}
+amphipods :: Chamber Char -> Amphipods
+amphipods = mapChamber $ Map.filter (`elem` ['A'..'Z'])
 
 -- | Parses Input...
 -- >>> parseInput testInput
@@ -150,8 +188,28 @@ testInput = unlines $ tail $ lines [r|
   #########
 |]
 
-newtype Chamber x = Chamber { unChamber :: Map.Map Location x } deriving (Eq, Ord, Show)
+-- Chamber Helpers
+
+chamberToList :: Chamber a -> [(Location, a)]
+chamberToList = Map.toList . unChamber
+
+mapChamberWithKey :: ((Location, a) -> (Location, b)) -> Chamber a -> Chamber b
+mapChamberWithKey f = mapChamber $ Map.fromList . map f . Map.toList
+
+mapChamber :: (Map.Map Location a -> Map.Map Location b) -> Chamber a -> Chamber b
+mapChamber f = Chamber . f . unChamber
+
+classCost :: Class -> Integer
+classCost 'A' = 1
+classCost 'B' = 10
+classCost 'C' = 100
+classCost 'D' = 1000
+classCost _   = -1
+
+-- Data Types
+
+newtype Chamber x = Chamber { unChamber :: Map.Map Location x } deriving (Eq, Ord, Show, Functor)
 type    Squares   = Chamber ()
-type    Amphipods = Chamber Class
+type    Amphipods = Chamber Class -- Goblins
 type    Location  = (Int,Int)
 type    Class     = Char
