@@ -112,12 +112,30 @@ What is the least energy required to organize the amphipods?
 
 -}
 
-import Data.Map qualified as Map
+import Algorithm.Search (aStar)
+import Data.Set qualified as Set
 
-day23 :: String -> Int
-day23 = const 123
+day23 :: String -> Integer
+day23 i = case aStar neighbours transitionCosts remainingCostEstimate shortestPath (parseInput i) of
+    Nothing -> 0
+    Just (c, _) -> c
 
-newtype Chamber  = Chamber { unChamber :: Map.Map Location Class }
+neighbours :: Chamber -> Set.Set Chamber
+neighbours = undefined
+
+transitionCosts :: Chamber -> Chamber -> Integer
+transitionCosts = undefined
+
+remainingCostEstimate :: Chamber -> Integer
+remainingCostEstimate = undefined
+
+shortestPath :: Chamber -> Bool
+shortestPath = undefined
+
+parseInput :: String -> Chamber
+parseInput = undefined
+
+newtype Chamber  = Chamber { unChamber :: Set.Set (Location, Class) } deriving (Eq, Ord, Show)
 type    Location = (Int,Int)
 type    Class    = Char
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -126,13 +125,9 @@ Using the full map, what is the lowest total risk of any path from the top left 
 
 import Text.RawString.QQ (r)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe, catMaybes, mapMaybe, isJust)
-import Data.Ord (comparing)
-import Data.Foldable (minimumBy)
-import Utils ( crossProductZero )
-import Control.Arrow ((&&&), Arrow ((***), second, first))
-import Data.Function (on)
-import qualified Data.Set as Set
+import Data.Maybe (fromMaybe, mapMaybe, isJust)
+import Utils (crossProductZero)
+import Control.Arrow (Arrow ((***), second, first))
 import Algorithm.Search (aStar)
 
 -- | Testing day15b
@@ -204,7 +199,7 @@ solve' m = fromMaybe (error "oops!") (findPath (0,0) edge)
     sb = (x, succ y)
 
   costFn :: (Int, Int) -> (Int, Int) -> Int
-  costFn p1@(x1,y1) p2@(x2,y2) = sum $ mapMaybe (`Map.lookup` m) $ pointsBetween p1 p2
+  costFn p1 p2 = sum $ mapMaybe (`Map.lookup` m) $ pointsBetween p1 p2
 
   findPath :: (Int, Int) -> (Int, Int) -> Maybe [(Int, Int)]
   findPath start end = snd <$> aStar next cost remaining (== end) start
