@@ -37,7 +37,6 @@ executable advent2021
     Advent21b
     Advent22
     Advent22b
-    Advent22BCuboids
 
   hs-source-dirs:      src
 
