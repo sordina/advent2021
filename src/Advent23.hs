@@ -112,5 +112,13 @@ What is the least energy required to organize the amphipods?
 
 -}
 
+import Data.Map qualified as Map
+
 day23 :: String -> Int
 day23 = const 123
+
+newtype Chamber  = Chamber { unChamber :: Map.Map Location Class }
+type    Location = (Int,Int)
+type    Class    = Char
+
+
