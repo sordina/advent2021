@@ -9,6 +9,16 @@ all: build
 build:
 	cabal build
 
+.PHONY: run
+run:
+	@[ "$(day)" ] || ( echo "Usage: make run day=NN" && exit 1 )
+	cabal build
+	@echo
+	cabal exec advent2021 $(day) < "data/day$(day).input"
+	@echo
+	cabal exec advent2021 $(day)b < "data/day$(day).input"
+	@echo
+
 .PHONY: every
 every: $(objects)
 
