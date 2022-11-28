@@ -135,23 +135,30 @@ day23 i = maybe 0 fst $ aStar neighbours transitionCosts remainingCostEstimate s
     -- Function to generate transition costs between neighboring states.
     -- This is only called for adjacent states,
     -- so it is safe to have this function be partial for non-neighboring states.
+    -- 
     -- TODO: This doesn't take into consideration the non-pausing in doorways rule.
+    -- TODO: One way to do this - If you're loitering, move!
     transitionCosts :: Amphipods -> Amphipods -> Integer
     transitionCosts = classMovedCost
 
     -- Estimate on remaining cost given a state.
     -- Should never underestimate the cost.
     remainingCostEstimate :: Amphipods -> Integer
-    remainingCostEstimate = undefined
+    remainingCostEstimate = product . map (classEstimate . snd) . filter (not.correct) . chamberToList
+        where
+        correct (k,v) = lookupChamber k solutionAmphipods == Just v
+        classEstimate = (* boardSize) . classCost
 
     -- Predicate to determine if solution found.
     -- aStar returns the shortest path to the first state for which this predicate returns True
     solution :: Amphipods -> Bool
-    solution = undefined
+    solution = (== solutionAmphipods)
 
-    parsed  = parseInput i
-    players = amphipods parsed
-    board   = squares parsed
+    -- Helper data
+    parsed    = parseInput i
+    players   = amphipods parsed
+    board     = squares parsed
+    boardSize = fromIntegral (Map.size (unChamber board))
 
 -- | Determine which class of amphipod moved.
 --   There may be a more efficient way to do this, but this is ok for now.
@@ -188,7 +195,22 @@ testInput = unlines $ tail $ lines [r|
   #########
 |]
 
+solutionAmphipods :: Amphipods
+solutionAmphipods = amphipods (parseInput solutionInput)
+
+solutionInput :: String
+solutionInput = unlines $ tail $ lines [r|
+#############
+#...........#
+###A#B#C#D###
+  #A#B#C#D#
+  #########
+|]
+
 -- Chamber Helpers
+
+lookupChamber :: Location -> Chamber a -> Maybe a
+lookupChamber k = Map.lookup k . unChamber
 
 chamberToList :: Chamber a -> [(Location, a)]
 chamberToList = Map.toList . unChamber
