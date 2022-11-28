@@ -12,9 +12,23 @@ import Advent22 qualified as A22
 import Advent22BCuboids qualified as A22BCuboids
 import Data.Set qualified as Set
 import Text.RawString.QQ (r)
+import Data.Foldable (foldl')
 
 day22b :: String -> Int
-day22b = sum . map A22BCuboids.volume . Set.toList . foldl apply Set.empty . map cubify . A22.parseInput
+day22b = sum . map A22BCuboids.volume . Set.toList . process . map cubify . A22.parseInput
+
+process :: [(Bool, A22BCuboids.Cuboid)] -> Set.Set A22BCuboids.Cuboid
+process = foldl' apply Set.empty
+
+-- | Testing a very simple 2d inputs
+-- >>> process [(True, A22BCuboids.Cuboid [(0,3),(0,3)])]
+-- >>> process [(True, A22BCuboids.Cuboid [(0,3),(0,3)]), (False, A22BCuboids.Cuboid [(3,4),(3,4)])]
+-- >>> process [(True, A22BCuboids.Cuboid [(0,3),(0,3)]), (True, A22BCuboids.Cuboid [(3,6),(3,6)])]
+-- >>> process [(True, A22BCuboids.Cuboid [(0,3),(0,3)]), (True, A22BCuboids.Cuboid [(3,6),(3,6)]), (False, A22BCuboids.Cuboid [(3,3),(3,3)])]
+-- fromList [Cuboid [(0,3),(0,3)]]
+-- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)]]
+-- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)],Cuboid [(3,6),(3,6)]]
+-- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)]]
 
 apply :: Set.Set A22BCuboids.Cuboid -> (Bool, A22BCuboids.Cuboid) -> Set.Set A22BCuboids.Cuboid
 apply s (False, c) = Set.unions $ Set.map (A22BCuboids.-~ c) s -- EZ
@@ -25,7 +39,7 @@ cubify (b, (x,y,z)) = (b, A22BCuboids.Cuboid [x,y,z])
 
 -- | Testing day22 on testInput
 -- >>> day22b testInputSmall
--- 26
+-- 19
 
 -- | Testing parseInput on testInput
 -- >>> A22.parseInput testInputSmall
