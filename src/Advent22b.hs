@@ -63,6 +63,11 @@ on x=10..10,y=10..10,z=10..10
 -- * therefore, [(1,1),(1,1),(1,1)] has a volume of 1
 -- * and the intersection of [(1,1),(1,1),(1,1)] and [(1,1),(1,1),(1,1)] is [(1,1),(1,1),(1,1)]
 
+-- | A -~ B Subtracts B from A
+--   It seems that this should be able to be accomplished by just taking the left hand side
+--   of a composite operation, however this yields the wrong value.
+--   Investigation into why this is the case would be worth while.
+-- 
 (-~) :: Cuboid -> Cuboid -> Set.Set Cuboid
 a -~ b = case compositeCuboids a b of
     Nothing    -> Set.singleton a
