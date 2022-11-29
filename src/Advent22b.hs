@@ -12,6 +12,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- | Run with `cat data/day22.input.small | cabal run advent2021 22b`
 -- 
@@ -31,22 +32,19 @@ import Control.Arrow ((&&&), Arrow (second))
 import Data.Maybe (catMaybes)
 import GHC.TypeNats (Nat, natVal, KnownNat)
 import Data.Data (Proxy(..))
+import Data.List (intercalate)
 
 day22b :: String -> Int
 day22b = sum . map volume . Set.toList . process . map cubify . A22.parseInput
 
-process :: [(Bool, Cuboid 3)] -> Set.Set (Cuboid 3)
+process :: [(Bool, Cuboid n)] -> Set.Set (Cuboid n)
 process = foldl' apply Set.empty
 
 -- | Testing a very simple 2d inputs
--- >>> process [(True, Cuboid [(0,3),(0,3)])]
--- >>> process [(True, Cuboid [(0,3),(0,3)]), (False, Cuboid [(3,4),(3,4)])]
--- >>> process [(True, Cuboid [(0,3),(0,3)]), (True, Cuboid [(3,6),(3,6)])]
--- >>> process [(True, Cuboid [(0,3),(0,3)]), (True, Cuboid [(3,6),(3,6)]), (False, Cuboid [(3,3),(3,3)])]
--- fromList [Cuboid [(0,3),(0,3)]]
--- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)]]
--- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)],Cuboid [(3,6),(3,6)]]
--- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)],Cuboid [(3,3),(4,6)],Cuboid [(4,6),(3,3)],Cuboid [(4,6),(4,6)]]
+-- >>> process [(True, mkVec2 ((0,3),(0,3)))]
+-- >>> process [(True, mkVec2 ((0,3),(0,3))), (False, mkVec2 ((3,4),(3,4)))]
+-- >>> process [(True, mkVec2 ((0,3),(0,3))), (True, mkVec2  ((3,6),(3,6)))]
+-- >>> process [(True, mkVec2 ((0,3),(0,3))), (True, mkVec2  ((3,6),(3,6))), (False, mkVec2 ((3,3),(3,3)))]
 
 apply :: Set.Set (Cuboid n) -> (Bool, Cuboid n) -> Set.Set (Cuboid n)
 apply s (False, c) = Set.unions $ Set.map (-~ c) s -- EZ
@@ -89,14 +87,10 @@ a -~ b = case compositeCuboids a b of
     Just (s,t) -> s Set.\\ t
 
 -- | Calculates the volume of a cuboid.
--- >>> volume (Cuboid [])
--- >>> volume (Cuboid [(1,1)])
--- >>> volume (Cuboid [(1,2), (3,4)])
--- >>> volume (Cuboid [(1,2), (3,4), (5,6)])
--- 1
--- 1
--- 4
--- 8
+-- >>> volume <$> mkVec @0 []
+-- >>> volume <$> mkVec @1 [(1,1)]
+-- >>> volume <$> mkVec @2 [(1,2), (3,4)]
+-- >>> volume <$> mkVec @3 [(1,2), (3,4), (5,6)]
 volume :: Cuboid n -> Int
 volume rs = product $ fmap (succ . uncurry (-) . swap) rs
 
@@ -148,10 +142,13 @@ significant a b
 zipWithMVec :: Monad m => (a -> b -> m c) -> Vec n a -> Vec n b -> m (Vec n c)
 zipWithMVec f (UnsafeMkVec a) (UnsafeMkVec b) = UnsafeMkVec <$> V.zipWithM f a b
 
-mkVec :: forall a n. KnownNat n => [a] -> Maybe (Vec n a)
+mkVec :: forall n a. KnownNat n => [a] -> Maybe (Vec n a)
 mkVec l
     | fromIntegral (natVal (Proxy @n)) == length l = Just (UnsafeMkVec (V.fromListN 3 l))
     | otherwise = Nothing
+
+mkVec2 :: (a,a) -> Vec 2 a
+mkVec2 (a,b) = UnsafeMkVec (V.fromListN 2 [a,b])
 
 mkVec3 :: (a,a,a) -> Vec 3 a
 mkVec3 (a,b,c) = UnsafeMkVec (V.fromListN 3 [a,b,c])
@@ -162,4 +159,8 @@ type Cuboid (n :: Nat) = Vec n P2
 type P2 = (Int,Int)
 
 newtype Vec (n :: Nat) a = UnsafeMkVec { getVector :: V.Vector a }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Functor, Foldable, Traversable)
+
+instance Show a => Show (Vec n a) where
+    show :: Show a => Vec n a -> String
+    show v = "V" <> show (length v) <> " <" <> intercalate "," (toList (fmap show v)) <> ">"
