@@ -58,8 +58,8 @@ cubify = second mkVec3
 -- 39
 
 -- | Testing parseInput on testInput
--- >>> A22.parseInput testInputSmall
--- [(True,((10,12),(10,12),(10,12))),(True,((11,13),(11,13),(11,13))),(False,((9,11),(9,11),(9,11))),(True,((10,10),(10,10),(10,10)))]
+-- >>> cubify <$> A22.parseInput testInputSmall
+-- [(True,V3 <(10,12),(10,12),(10,12)>),(True,V3 <(11,13),(11,13),(11,13)>),(False,V3 <(9,11),(9,11),(9,11)>),(True,V3 <(10,10),(10,10),(10,10)>)]
 
 testInputSmall :: String
 testInputSmall = unlines $ tail $ lines [Q.r|
@@ -144,8 +144,10 @@ zipWithMVec f (UnsafeMkVec a) (UnsafeMkVec b) = UnsafeMkVec <$> V.zipWithM f a b
 
 mkVec :: forall n a. KnownNat n => [a] -> Maybe (Vec n a)
 mkVec l
-    | fromIntegral (natVal (Proxy @n)) == length l = Just (UnsafeMkVec (V.fromListN 3 l))
+    | n == length l = Just (UnsafeMkVec (V.fromListN n l))
     | otherwise = Nothing
+    where
+    n = fromIntegral (natVal (Proxy @n))
 
 mkVec2 :: (a,a) -> Vec 2 a
 mkVec2 (a,b) = UnsafeMkVec (V.fromListN 2 [a,b])
