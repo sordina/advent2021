@@ -4,23 +4,38 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 -- | Run with `cat data/day22.input.small | cabal run advent2021 22b`
+-- 
+-- Other cool libraries:
+-- * https://github.com/ChrisPenner/grids#grids
+-- * https://hackage.haskell.org/package/grids-0.5.0.1/docs/Data-Grid-Examples-Conway.html
+-- * https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html
 module Advent22b where
 
 import Advent22 qualified as A22
 import Data.Set qualified as Set
 import Text.RawString.QQ qualified as Q
-import Data.Foldable (foldl')
+import Data.Vector qualified as V
+import Data.Foldable (foldl', toList)
 import Data.Tuple (swap)
-import Control.Monad ( zipWithM )
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&), Arrow (second))
 import Data.Maybe (catMaybes)
+import GHC.TypeNats (Nat, natVal, KnownNat)
+import Data.Data (Proxy(..))
 
 day22b :: String -> Int
 day22b = sum . map volume . Set.toList . process . map cubify . A22.parseInput
 
-process :: [(Bool, Cuboid)] -> Set.Set Cuboid
+process :: [(Bool, Cuboid 3)] -> Set.Set (Cuboid 3)
 process = foldl' apply Set.empty
 
 -- | Testing a very simple 2d inputs
@@ -33,12 +48,12 @@ process = foldl' apply Set.empty
 -- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)],Cuboid [(3,6),(3,6)]]
 -- fromList [Cuboid [(0,2),(0,2)],Cuboid [(0,2),(3,3)],Cuboid [(3,3),(0,2)],Cuboid [(3,3),(4,6)],Cuboid [(4,6),(3,3)],Cuboid [(4,6),(4,6)]]
 
-apply :: Set.Set Cuboid -> (Bool, Cuboid) -> Set.Set Cuboid
+apply :: Set.Set (Cuboid n) -> (Bool, Cuboid n) -> Set.Set (Cuboid n)
 apply s (False, c) = Set.unions $ Set.map (-~ c) s -- EZ
 apply s (True,  c) = Set.insert c $ Set.unions $ Set.map (-~ c) s -- Why not?? :D
 
-cubify :: (a, (P2, P2, P2)) -> (a, Cuboid)
-cubify (b, (x,y,z)) = (b, Cuboid [x,y,z])
+cubify :: (a, (P2, P2, P2)) -> (a, Cuboid 3)
+cubify = second mkVec3
 
 -- | Testing day22 on testInput
 -- >>> day22b testInputSmall
@@ -68,7 +83,7 @@ on x=10..10,y=10..10,z=10..10
 --   of a composite operation, however this yields the wrong value.
 --   Investigation into why this is the case would be worth while.
 -- 
-(-~) :: Cuboid -> Cuboid -> Set.Set Cuboid
+(-~) :: Cuboid n -> Cuboid n -> Set.Set (Cuboid n)
 a -~ b = case compositeCuboids a b of
     Nothing    -> Set.singleton a
     Just (s,t) -> s Set.\\ t
@@ -82,20 +97,20 @@ a -~ b = case compositeCuboids a b of
 -- 1
 -- 4
 -- 8
-volume :: Cuboid -> Int
-volume (Cuboid rs) = product $ map (succ . uncurry (-) . swap) rs
+volume :: Cuboid n -> Int
+volume rs = product $ fmap (succ . uncurry (-) . swap) rs
 
 -- | The regions represented by sub-cuboids that belong to cube A and cube B
 --   the intersecting region is part of both sets.
 -- 
 --   The function exists in this form so that it can be used for subsequent
 --   addition or subtraction operations.
-compositeCuboids :: Cuboid -> Cuboid -> Maybe (Set.Set Cuboid, Set.Set Cuboid)
-compositeCuboids (Cuboid rs1) (Cuboid rs2) = (possible gl &&& possible gr) <$> zipWithM compositeR rs1 rs2
+compositeCuboids :: Cuboid n -> Cuboid n -> Maybe (Set.Set (Cuboid n), Set.Set (Cuboid n))
+compositeCuboids rs1 rs2 = (possible gl &&& possible gr) <$> zipWithMVec compositeR rs1 rs2
     where
     gl (l, c, _) = c:l
     gr (_, c, r) = c:r
-    possible f = Set.fromList . map Cuboid . mapM f
+    possible f = Set.fromList . toList . mapM f
 
 -- Splits an intersection into mutually exclusive regions and intersection (a independent, intersecting, b independent)
 -- 
@@ -128,8 +143,23 @@ significant a b
     | a <= b = Just (a,b)
     | otherwise = Nothing
 
--- Argument is the range in each dimension
-newtype Cuboid = Cuboid [P2]
-    deriving (Eq, Ord, Show)
+-- Data Types and constructors
+
+zipWithMVec :: Monad m => (a -> b -> m c) -> Vec n a -> Vec n b -> m (Vec n c)
+zipWithMVec f (UnsafeMkVec a) (UnsafeMkVec b) = UnsafeMkVec <$> V.zipWithM f a b
+
+mkVec :: forall a n. KnownNat n => [a] -> Maybe (Vec n a)
+mkVec l
+    | fromIntegral (natVal (Proxy @n)) == length l = Just (UnsafeMkVec (V.fromListN 3 l))
+    | otherwise = Nothing
+
+mkVec3 :: (a,a,a) -> Vec 3 a
+mkVec3 (a,b,c) = UnsafeMkVec (V.fromListN 3 [a,b,c])
+
+-- Elements are ranges in each dimension
+type Cuboid (n :: Nat) = Vec n P2
 
 type P2 = (Int,Int)
+
+newtype Vec (n :: Nat) a = UnsafeMkVec { getVector :: V.Vector a }
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)

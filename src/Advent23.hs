@@ -143,6 +143,8 @@ day23 i = maybe 0 fst $ aStar neighbours transitionCosts remainingCostEstimate s
 
     -- Estimate on remaining cost given a state.
     -- Should never underestimate the cost.
+    -- This is a gross overestimate, but should at least prove useful
+    -- TODO: Should factor in distances from goals
     remainingCostEstimate :: Amphipods -> Integer
     remainingCostEstimate = product . map (classEstimate . snd) . filter (not.correct) . chamberToList
         where
