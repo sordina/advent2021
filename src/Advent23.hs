@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE NegativeLiterals #-}
 
 module Advent23 where
 
@@ -113,31 +114,38 @@ What is the least energy required to organize the amphipods?
 
 -}
 
-import Control.Monad (void)
+import Control.Monad (void, guard)
 import Text.RawString.QQ (r)
 import Algorithm.Search (aStar)
 import Data.Map qualified as Map
+import Data.Tuple (swap)
+import Data.Maybe (isJust, isNothing)
 
 day23 :: String -> Integer
-day23 i = maybe 0 fst $ aStar neighbours transitionCosts remainingCostEstimate solution players
+day23 i = maybe -1 fst $ aStar neighbours transitionCosts remainingCostEstimate solution players
     where
 
     -- Function to generate list of neighboring states given the current state
+    -- If anyone is loitering, only they can move
     neighbours :: Amphipods -> [Amphipods]
-    neighbours as = filter valid $ map move $ chamberToList as
+    neighbours as = concatMap adjacentA if null loitering then ls else loitering
         where
-        move :: (Location, Class) -> Amphipods
-        move = undefined
+        ls = chamberToList as
+        loitering = filter (isJust . flip lookupChamber doorways . fst) ls
 
-        valid :: Amphipods -> Bool
-        valid = undefined
+        adjacentA :: (Location, Class) -> [Amphipods]
+        adjacentA (p,c) = do
+            let as' = deleteChamber p as
+            p' <- adjacentC p
+            guard (isJust $ lookupChamber p' parsed) -- Is on the board
+            guard (isNothing $ lookupChamber p' as) -- Isn't stacking on top of another Amphipod
+            pure $ insertChamber p' c as'
 
     -- Function to generate transition costs between neighboring states.
     -- This is only called for adjacent states,
     -- so it is safe to have this function be partial for non-neighboring states.
     -- 
-    -- TODO: This doesn't take into consideration the non-pausing in doorways rule.
-    -- TODO: One way to do this - If you're loitering, move!
+    -- Note: This assumes that only one Amphipod has moved only one position
     transitionCosts :: Amphipods -> Amphipods -> Integer
     transitionCosts = classMovedCost
 
@@ -146,21 +154,24 @@ day23 i = maybe 0 fst $ aStar neighbours transitionCosts remainingCostEstimate s
     -- This is a gross overestimate, but should at least prove useful
     -- TODO: Should factor in distances from goals
     remainingCostEstimate :: Amphipods -> Integer
-    remainingCostEstimate = product . map (classEstimate . snd) . filter (not.correct) . chamberToList
+    remainingCostEstimate = product . map estimate . chamberToList
         where
-        correct (k,v) = lookupChamber k solutionAmphipods == Just v
-        classEstimate = (* boardSize) . classCost
+        estimate (k,v) = classCost v * distance (k,v)
+        distance (k,v) = maybe 1 (manhattan k) (Map.lookup v exits)
 
     -- Predicate to determine if solution found.
     -- aStar returns the shortest path to the first state for which this predicate returns True
     solution :: Amphipods -> Bool
-    solution = (== solutionAmphipods)
+    solution = (== end)
 
-    -- Helper data
+    -- Helpers
+    solutions = parseInput solutionInput
     parsed    = parseInput i
     players   = amphipods parsed
-    board     = squares parsed
-    boardSize = fromIntegral (Map.size (unChamber board))
+    doorways  = prohibited solutions
+    end       = amphipods solutions
+    exits     = Map.fromList $ map swap $  Map.toList $ unChamber solutions
+    manhattan = \(x,y) (x',y') -> abs (x-x') + abs (y-y')
 
 -- | Determine which class of amphipod moved.
 --   There may be a more efficient way to do this, but this is ok for now.
@@ -180,6 +191,9 @@ squares = void
 amphipods :: Chamber Char -> Amphipods
 amphipods = mapChamber $ Map.filter (`elem` ['A'..'Z'])
 
+prohibited :: Chamber Char -> Squares
+prohibited = void . mapChamber (Map.filter (`elem` ","))
+
 -- | Parses Input...
 -- >>> parseInput testInput
 -- Chamber {unChamber = fromList [((1,1),'.'),((2,1),'.'),((3,1),'.'),((3,2),'B'),((3,3),'A'),((4,1),'.'),((5,1),'.'),((5,2),'C'),((5,3),'D'),((6,1),'.'),((7,1),'.'),((7,2),'B'),((7,3),'C'),((8,1),'.'),((9,1),'.'),((9,2),'D'),((9,3),'A'),((10,1),'.'),((11,1),'.')]}
@@ -197,13 +211,10 @@ testInput = unlines $ tail $ lines [r|
   #########
 |]
 
-solutionAmphipods :: Amphipods
-solutionAmphipods = amphipods (parseInput solutionInput)
-
 solutionInput :: String
 solutionInput = unlines $ tail $ lines [r|
 #############
-#...........#
+#..,.,.,.,..#
 ###A#B#C#D###
   #A#B#C#D#
   #########
@@ -214,6 +225,15 @@ solutionInput = unlines $ tail $ lines [r|
 lookupChamber :: Location -> Chamber a -> Maybe a
 lookupChamber k = Map.lookup k . unChamber
 
+deleteChamber :: Location -> Chamber a -> Chamber a
+deleteChamber k = mapChamber $ Map.delete k
+
+insertChamber :: Location -> a -> Chamber a -> Chamber a
+insertChamber k v = mapChamber $ Map.insert k v
+
+sizeChamber :: Chamber a -> Integer
+sizeChamber = fromIntegral . Map.size . unChamber
+
 chamberToList :: Chamber a -> [(Location, a)]
 chamberToList = Map.toList . unChamber
 
@@ -222,6 +242,9 @@ mapChamberWithKey f = mapChamber $ Map.fromList . map f . Map.toList
 
 mapChamber :: (Map.Map Location a -> Map.Map Location b) -> Chamber a -> Chamber b
 mapChamber f = Chamber . f . unChamber
+
+adjacentC :: (Enum a, Enum b, Eq a, Eq b) => (a, b) -> [(a, b)]
+adjacentC p@(x,y) = [(x',y') |x'<-[pred x .. succ x], y' <- [pred y .. succ y], (x',y') /= p]
 
 classCost :: Class -> Integer
 classCost 'A' = 1
@@ -235,5 +258,5 @@ classCost _   = -1
 newtype Chamber x = Chamber { unChamber :: Map.Map Location x } deriving (Eq, Ord, Show, Functor)
 type    Squares   = Chamber ()
 type    Amphipods = Chamber Class -- Goblins
-type    Location  = (Int,Int)
+type    Location  = (Integer, Integer)
 type    Class     = Char
