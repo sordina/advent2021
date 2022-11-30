@@ -119,12 +119,16 @@ import Text.RawString.QQ (r)
 import Algorithm.Search (aStar)
 import Data.Map qualified as Map
 import Data.Tuple (swap)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust, isNothing, fromMaybe)
+import Debug.Trace (trace)
+import Control.Arrow (Arrow(second))
 
+-- | Solves day23
+-- >>> day23 testInput
+-- 14881
 day23 :: String -> Integer
-day23 i = maybe -1 fst $ aStar neighbours transitionCosts remainingCostEstimate solution players
+day23 i = maybe -1 fst $ traceChambers $ aStar neighbours transitionCosts remainingCostEstimate solution players
     where
-
     -- Function to generate list of neighboring states given the current state
     -- If anyone is loitering, only they can move
     neighbours :: Amphipods -> [Amphipods]
@@ -145,19 +149,22 @@ day23 i = maybe -1 fst $ aStar neighbours transitionCosts remainingCostEstimate 
     -- This is only called for adjacent states,
     -- so it is safe to have this function be partial for non-neighboring states.
     -- 
+    -- | Determine which class of amphipod moved.
+    --   There may be a more efficient way to do this, but this is ok for now.
+    --   Should only ever be one item moved.
+    -- 
     -- Note: This assumes that only one Amphipod has moved only one position
     transitionCosts :: Amphipods -> Amphipods -> Integer
-    transitionCosts = classMovedCost
+    transitionCosts (Chamber a) (Chamber b) = classCost $ head $ Map.elems $ Map.difference a b
 
     -- Estimate on remaining cost given a state.
     -- Should never underestimate the cost.
     -- This is a gross overestimate, but should at least prove useful
-    -- TODO: Should factor in distances from goals
     remainingCostEstimate :: Amphipods -> Integer
     remainingCostEstimate = product . map estimate . chamberToList
         where
         estimate (k,v) = classCost v * distance (k,v)
-        distance (k,v) = maybe 1 (manhattan k) (Map.lookup v exits)
+        distance (k,v) = succ $ maybe (error "oops") (sum . map (manhattan k)) (Map.lookup v exits)
 
     -- Predicate to determine if solution found.
     -- aStar returns the shortest path to the first state for which this predicate returns True
@@ -165,25 +172,9 @@ day23 i = maybe -1 fst $ aStar neighbours transitionCosts remainingCostEstimate 
     solution = (== end)
 
     -- Helpers
-    solutions = parseInput solutionInput
     parsed    = parseInput i
     players   = amphipods parsed
-    doorways  = prohibited solutions
-    end       = amphipods solutions
-    exits     = Map.fromList $ map swap $  Map.toList $ unChamber solutions
     manhattan = \(x,y) (x',y') -> abs (x-x') + abs (y-y')
-
--- | Determine which class of amphipod moved.
---   There may be a more efficient way to do this, but this is ok for now.
---   Should only ever be one item moved.
-classMovedCost :: Amphipods -> Amphipods -> Integer
-classMovedCost (Chamber a) (Chamber b) = classCost $ head $ Map.elems $ Map.difference a b
-
--- | Transforms chamber into squares
--- >>> squares (parseInput testInput)
--- Chamber {unChamber = fromList [((1,1),()),((2,1),()),((3,1),()),((3,2),()),((3,3),()),((4,1),()),((5,1),()),((5,2),()),((5,3),()),((6,1),()),((7,1),()),((7,2),()),((7,3),()),((8,1),()),((9,1),()),((9,2),()),((9,3),()),((10,1),()),((11,1),())]}
-squares :: Chamber Char -> Squares
-squares = void
 
 -- | Transforms chamber into amphipods
 -- >>> amphipods (parseInput testInput)
@@ -201,6 +192,18 @@ parseInput :: String -> Chamber Char
 parseInput i = Chamber $ Map.filter (`notElem` "# ") $ Map.fromList $
     zip [0..] (map (zip [0..]) (lines i))
     >>= (\(y,l) -> map (\(x,c) -> ((x,y),c)) l)
+
+solutions :: Chamber Char
+solutions = parseInput solutionInput
+
+doorways :: Squares
+doorways = prohibited solutions
+
+end :: Amphipods
+end = amphipods solutions
+
+exits :: Map.Map Char [Location]
+exits = Map.fromListWith (<>) $ map (second pure . swap) $  Map.toList $ unChamber solutions
 
 testInput :: String
 testInput = unlines $ tail $ lines [r|
@@ -221,6 +224,24 @@ solutionInput = unlines $ tail $ lines [r|
 |]
 
 -- Chamber Helpers
+
+traceChambers :: Maybe (a, [Amphipods]) -> Maybe (a, [Amphipods])
+traceChambers Nothing = trace "--- \n" Nothing
+traceChambers x@(Just (_,xs)) = trace (concatMap renderChamber xs) x
+
+renderChamber :: Amphipods -> String
+renderChamber as = unlines $
+    flip map [0..h] \y -> do
+        flip map [0..w] \x -> do
+            fromMaybe
+                (fromMaybe ' ' (lookupChamber (x,y) (fmap o c)))
+                (lookupChamber (x, y) as)
+    where
+    o = \x -> if x `elem` ['A'..'Z'] then ' ' else x
+    c = parseInput testInput
+    l = lines testInput
+    h = fromIntegral $ length l
+    w = fromIntegral $ length $ head l
 
 lookupChamber :: Location -> Chamber a -> Maybe a
 lookupChamber k = Map.lookup k . unChamber
@@ -244,14 +265,14 @@ mapChamber :: (Map.Map Location a -> Map.Map Location b) -> Chamber a -> Chamber
 mapChamber f = Chamber . f . unChamber
 
 adjacentC :: (Enum a, Enum b, Eq a, Eq b) => (a, b) -> [(a, b)]
-adjacentC p@(x,y) = [(x',y') |x'<-[pred x .. succ x], y' <- [pred y .. succ y], (x',y') /= p]
+adjacentC (x,y) = [(pred x, y), (succ x, y), (x, pred y), (x, succ y)]
 
 classCost :: Class -> Integer
 classCost 'A' = 1
 classCost 'B' = 10
 classCost 'C' = 100
 classCost 'D' = 1000
-classCost _   = -1
+classCost _   = 1000000000
 
 -- Data Types
 
