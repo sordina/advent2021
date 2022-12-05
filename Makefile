@@ -26,13 +26,20 @@ every: $(objects)
 doctest-interactive:
 	find {src,*.cabal} | entr -- cabal exec -- doctest -fdefer-typed-holes -isrc src/*.hs
 
+.PRECIOUS: data/%/input
+data/%/input:
+	echo $@
+	$(eval x = $(shell echo $* | sed -E 's/Advent(..)/\1/'))
+	mkdir -p data/Advent$x
+	cd data/Advent$x && aoc d -y 2021 -d $x
+
 .PHONY: %.o
-%.o: src/%.hs
-	$(eval x = $(shell echo $< | sed -E 's/src.//; s/Advent(..)\.hs/\1/; s/0([0-9])/\1/g'))
+%.o: src/%.hs data/%/input
+	$(eval x = $(shell echo $< | sed -E 's/src.//; s/Advent(..)\.hs/\1/; s/(0[0-9])/\1/g'))
 	@echo
 	@echo make $@
 	@echo
-	advent2021 $(x)  < "data/day$(x).input"
+	advent2021 $(x)  < "data/Advent$(x)/input"
 	@echo
-	advent2021 $(x)b < "data/day$(x).input"
+	advent2021 $(x)b < "data/Advent$(x)/input"
 	@echo

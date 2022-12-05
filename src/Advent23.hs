@@ -172,9 +172,13 @@ day23 i = maybe -1 fst $ traceChambers $ aStar neighbours transitionCosts remain
     solution = (== end)
 
     -- Helpers
-    parsed    = parseInput i
-    players   = amphipods parsed
-    manhattan = \(x,y) (x',y') -> abs (x-x') + abs (y-y')
+    parsed  = parseInput i
+    players = amphipods parsed
+
+    manhattan (x,y) (x',y') =
+        if x == x'
+            then abs (y-y')
+            else abs (x-x') + (y-1) + (y'-1)
 
 -- | Transforms chamber into amphipods
 -- >>> amphipods (parseInput testInput)
