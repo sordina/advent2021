@@ -14,9 +14,9 @@ run:
 	@[ "$(day)" ] || ( echo "Usage: make run day=NN" && exit 1 )
 	cabal build
 	@echo
-	cabal exec advent2021 $(day) < "data/day$(day).input"
+	cabal exec advent2021 $(day) < "data/Advent$(day)/input"
 	@echo
-	cabal exec advent2021 $(day)b < "data/day$(day).input"
+	cabal exec advent2021 $(day)b < "data/Advent$(day)/input"
 	@echo
 
 .PHONY: every
