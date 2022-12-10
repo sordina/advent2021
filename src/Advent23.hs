@@ -5,6 +5,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE NegativeLiterals #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Advent23 where
 
@@ -51,19 +52,21 @@ day23 i = maybe -1 fst $ traceChambers $ aStar neighbours transitionCosts heuris
     resumed (_,_,id') id'' = maybe True (id'' ==) id'
 
     heuristic :: State -> Integer
-    heuristic (c,_,_) = product (map manhattan (chamberToList (anonymiseChamber c))) * choose (sizeChamber parsed) (fromIntegral $ Map.size $ unChamber (anonymiseChamber c) Map.\\ unChamber end)
+    heuristic (c,_,_)
+        = product (map manhattan (chamberToList (anonymiseChamber c)))
+        * choose (sizeChamber parsed) (fromIntegral $ Map.size $ unChamber (anonymiseChamber c) Map.\\ unChamber end)
 
     manhattan :: ((Integer,Integer), Class) -> Integer
     manhattan ((x,y),c) = (classCost c *) $ product $ map (\(x',y') -> (1+) $ abs (x-x') + abs (if x == x' then y-y' else 4 - abs (y-y'))) (lookupExits c)
 
     updateState :: State -> Location -> Location -> (ID,Class) -> State
-    updateState (w,m,f) l l' x@(id_,_) = (insertChamber l' x w, Just id_, f' {- , Set.insert (anonymiseChamber w) s -})
+    updateState (w,m,f) l l' x@(id_,_) = (insertChamber l' x w, Just id_, f')
         where
         f' = if hallway && notHome && (currentlyMoving || someoneElseMoving) then Just id_ else Nothing
-        hallway           = isNothing (lookupChamber l' end)
-        notHome           = isNothing (lookupChamber l end)
-        someoneElseMoving = maybe False (id_ /=) m
-        currentlyMoving   = f == Just id_ && m == Just id_
+        hallway           = isNothing (lookupChamber l end)
+        notHome           = isNothing (lookupChamber l' end)
+        currentlyMoving   = f == Just id_
+        someoneElseMoving = isNothing f && maybe False (id_ /=) m
 
     -- Function to generate transition costs between neighboring states.
     -- This is only called for adjacent states,
@@ -153,6 +156,7 @@ solutionInput = unlines $ tail $ lines [r|
 
 -- Chamber Helpers
 
+choose :: Integral a => a -> a -> a
 choose n k = fact n `div` (fact k * fact (n-k))
 
 fact :: (Num a, Enum a) => a -> a
